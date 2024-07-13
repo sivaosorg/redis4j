@@ -20,6 +20,9 @@ plugins {
 
     // Apply the Groovy plugin to add support for Groovy
     id 'groovy'
+
+    // Apply the Spring dependency management plugin for managing dependencies
+    id 'io.spring.dependency-management' version '1.1.4'
 }
 
 apply plugin: 'java'
@@ -160,4 +163,13 @@ dependencies {
     implementation group: 'com.jayway.jsonpath', name: 'json-path', version: '2.9.0'
     // The "validation-api" library, version 2.0.1.Final, provides tools for validating Java objects according to defined constraints.
     implementation group: 'javax.validation', name: 'validation-api', version: '2.0.1.Final'
+    // The "spring-core" library, version 5.3.31, is a fundamental component of the Spring Framework,
+    // offering essential functionality for dependency injection, bean management, and core utilities to facilitate robust Java application development within the Spring ecosystem.
+    implementation group: 'org.springframework', name: 'spring-core', version: '5.3.31'
+    // The "spring-boot-starter-web" library, version 2.7.18, is a Spring Boot starter module that facilitates the setup of web applications,
+    // providing essential dependencies and configurations for building web-based projects.
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: '2.7.18'
+    // The "spring-boot-configuration-processor" library, version 2.7.18,
+    // is a Spring Boot module that processes configuration metadata annotations to generate metadata files and aid in auto-configuration of Spring applications.
+    implementation group: 'org.springframework.boot', name: 'spring-boot-configuration-processor', version: '2.7.18'
 }

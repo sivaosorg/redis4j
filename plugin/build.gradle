@@ -172,4 +172,17 @@ dependencies {
     // The "spring-boot-configuration-processor" library, version 2.7.18,
     // is a Spring Boot module that processes configuration metadata annotations to generate metadata files and aid in auto-configuration of Spring applications.
     implementation group: 'org.springframework.boot', name: 'spring-boot-configuration-processor', version: '2.7.18'
+    // The "spring-data-redis" library, version 2.7.8, is a Spring Data module that provides easy configuration and access to Redis from Spring applications,
+    // offering comprehensive support for Redis operations, including connection management, RedisTemplate, and repository support for Spring Data.
+    implementation group: 'org.springframework.data', name: 'spring-data-redis', version: '2.7.8'
+    // The "spring-integration-redis" library, version 5.5.20, is a Spring Integration module that provides support for Redis-based messaging,
+    // enabling integration with Redis to send and receive messages, as well as leveraging Redis Pub/Sub capabilities within Spring applications.
+    // Using runtimeOnly to ensure this dependency is only included at runtime.
+    runtimeOnly group: 'org.springframework.integration', name: 'spring-integration-redis', version: '5.5.20'
+    // The "lettuce-core" library, version 6.2.3.RELEASE, is a powerful and thread-safe Redis client for Java,
+    // providing asynchronous, synchronous, and reactive API support to efficiently interact with Redis servers.
+    implementation group: 'io.lettuce', name: 'lettuce-core', version: '6.2.3.RELEASE'
+    // The "jedis" library, version 5.1.3, is a simple and feature-rich Java client for Redis,
+    // providing synchronous and asynchronous communication with Redis servers to perform various operations and transactions.
+    implementation group: 'redis.clients', name: 'jedis', version: '5.1.3'
 }

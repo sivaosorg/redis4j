@@ -1,0 +1,8 @@
+# ################################
+# Spring Redis4J Config
+# 2024-06-16 10:48:54
+# ################################
+spring:
+  # noinspection SpellCheckingInspection
+  redis4j:
+    enabled: false

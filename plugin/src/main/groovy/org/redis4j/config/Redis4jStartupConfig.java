@@ -27,19 +27,20 @@ public class Redis4jStartupConfig implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) throws Exception {
         if (config.isConnected()) {
-            logger.info("Redis4j startup, connected Redis Server successfully");
+            logger.info("\uD83D\uDFE2 Redis4j startup, connected Redis Server successfully");
         } else {
-            logger.error("Redis4j startup, unable to connect to Redis Server");
+            logger.error("\uD83D\uDD34 Redis4j startup, unable to connect to Redis Server");
+            return;
         }
         if (config.isRedisDispatchAvailable()) {
-            logger.info("Redis4j startup, RedisTemplate<String, Object> created successfully");
+            logger.info("\uD83D\uDFE2 Redis4j startup, RedisTemplate<String, Object> created successfully");
         } else {
-            logger.error("Redis4j startup, unable to create RedisTemplate<String, Object>");
+            logger.error("\uD83D\uDD34 Redis4j startup, unable to create RedisTemplate<String, Object>");
         }
         if (config.isStringDispatchAvailable()) {
-            logger.info("Redis4j startup, StringRedisTemplate created successfully");
+            logger.info("\uD83D\uDFE2 Redis4j startup, StringRedisTemplate created successfully");
         } else {
-            logger.error("Redis4j startup, unable to create StringRedisTemplate");
+            logger.error("\uD83D\uDD34 Redis4j startup, unable to create StringRedisTemplate");
         }
     }
 }

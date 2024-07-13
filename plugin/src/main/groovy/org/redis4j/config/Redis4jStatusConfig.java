@@ -1,12 +1,18 @@
 package org.redis4j.config;
 
 import org.redis4j.service.Redis4jConfigService;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 @Configuration
+@ConditionalOnProperty(
+        value = "spring.redis4j.enabled",
+        havingValue = "true",
+        matchIfMissing = false
+)
 public class Redis4jStatusConfig {
     protected final Redis4jConfigService service;
     protected final RedisConnectionFactory factory;
@@ -67,7 +73,7 @@ public class Redis4jStatusConfig {
      *
      * @return the RedisTemplate<String, Object> instance.
      */
-    public RedisTemplate<String, Object> redisDispatch() {
+    public RedisTemplate<String, Object> dispatch() {
         return this.redisTemplate;
     }
 
@@ -76,7 +82,7 @@ public class Redis4jStatusConfig {
      *
      * @return the StringRedisTemplate instance.
      */
-    public StringRedisTemplate stringRedisDispatch() {
+    public StringRedisTemplate stringDispatch() {
         return this.stringRedisTemplate;
     }
 }

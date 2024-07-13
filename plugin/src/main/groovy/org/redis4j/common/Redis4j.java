@@ -26,7 +26,11 @@ public class Redis4j {
         if (Object4j.allNotNull(jStatusConfig)) {
             return jStatusConfig;
         }
-        jStatusConfig = Redis4jBeanConfig.getBean(Redis4jStatusConfig.class);
+        try {
+            jStatusConfig = Redis4jBeanConfig.getBean(Redis4jStatusConfig.class);
+        } catch (Exception ignored) {
+
+        }
         return jStatusConfig;
     }
 
@@ -69,7 +73,11 @@ public class Redis4j {
      * @return true if the factory is connected and can perform pipelined operations; false otherwise.
      */
     public static boolean isConnected() {
-        return jStatusConfigProvider().isConnected();
+        Redis4jStatusConfig e = jStatusConfigProvider();
+        if (e == null) {
+            return false;
+        }
+        return e.isConnected();
     }
 
     /**
@@ -79,7 +87,11 @@ public class Redis4j {
      * @return true if the service is executed; false otherwise.
      */
     public static boolean canExecuted() {
-        return jStatusConfigProvider().canExecuted();
+        Redis4jStatusConfig e = jStatusConfigProvider();
+        if (e == null) {
+            return false;
+        }
+        return e.canExecuted();
     }
 
     /**
@@ -88,7 +100,11 @@ public class Redis4j {
      * @return true if the Redis dispatch template is initialized; false otherwise.
      */
     public static boolean isRedisDispatchAvailable() {
-        return jStatusConfigProvider().isRedisDispatchAvailable();
+        Redis4jStatusConfig e = jStatusConfigProvider();
+        if (e == null) {
+            return false;
+        }
+        return e.isRedisDispatchAvailable();
     }
 
     /**
@@ -96,8 +112,12 @@ public class Redis4j {
      *
      * @return the RedisTemplate<String, Object> instance.
      */
-    public static RedisTemplate<String, Object> redisDispatch() {
-        return jStatusConfigProvider().redisDispatch();
+    public static RedisTemplate<String, Object> dispatch() {
+        Redis4jStatusConfig e = jStatusConfigProvider();
+        if (e == null) {
+            return null;
+        }
+        return e.dispatch();
     }
 
     /**
@@ -105,7 +125,11 @@ public class Redis4j {
      *
      * @return the StringRedisTemplate instance.
      */
-    public static StringRedisTemplate stringRedisDispatch() {
-        return jStatusConfigProvider().stringRedisDispatch();
+    public static StringRedisTemplate stringDispatch() {
+        Redis4jStatusConfig e = jStatusConfigProvider();
+        if (e == null) {
+            return null;
+        }
+        return e.stringDispatch();
     }
 }

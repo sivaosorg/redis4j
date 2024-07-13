@@ -109,7 +109,6 @@ spring:
     block_when_exhausted: true # Block when the connection pool is exhausted
     shared_native_connection: true # Enable sharing of native connections across multiple clients
     num_tests_per_eviction_run: 3 # Number of tests to run on eviction
-    min_evict_idle_duration: 60s # Minimum time for an idle object before it is evicted
     duration_between_eviction_runs: 30s # Time between eviction runs
     # The maximum amount of time a Redis command (or operation) can take before it is considered to have timed out.
     # This timeout ensures that if a Redis command execution exceeds this duration,

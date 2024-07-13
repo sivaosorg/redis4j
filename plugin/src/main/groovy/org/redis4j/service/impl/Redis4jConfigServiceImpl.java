@@ -6,7 +6,6 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
 import org.redis4j.config.props.Redis4jProperties;
 import org.redis4j.service.Redis4jConfigService;
 import org.slf4j.Logger;
@@ -28,12 +27,14 @@ import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.stereotype.Service;
 import org.unify4j.common.Object4j;
+import org.unify4j.common.String4j;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 
 import javax.annotation.PostConstruct;
 import java.time.Duration;
+import java.util.Objects;
 
 @SuppressWarnings({"FieldCanBeLocal", "DuplicatedCode"})
 @Service
@@ -100,7 +101,6 @@ public class Redis4jConfigServiceImpl implements Redis4jConfigService {
         config.setTestWhileIdle(properties.isTestWhileIdle());
         config.setBlockWhenExhausted(properties.isBlockWhenExhausted());
         config.setNumTestsPerEvictionRun(properties.getNumTestsPerEvictionRun());
-        config.setMinEvictableIdleDuration(properties.getMinEvictIdleDuration());
         config.setTimeBetweenEvictionRuns(properties.getDurationBetweenEvictionRuns());
         if (Object4j.allNotNull(pool)) {
             config.setMaxTotal(pool.getMaxActive());
@@ -216,7 +216,6 @@ public class Redis4jConfigServiceImpl implements Redis4jConfigService {
 
         ObjectMapper mapper = new ObjectMapper(factory);
         mapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
-        mapper.activateDefaultTyping(LaissezFaireSubTypeValidator.instance, ObjectMapper.DefaultTyping.NON_FINAL); // Enable default typing with non-final classes
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES); // Disable deserialization feature for unknown properties
 
         serializer.setObjectMapper(mapper);
@@ -296,7 +295,36 @@ public class Redis4jConfigServiceImpl implements Redis4jConfigService {
             return false;
         }
         try {
-            return factory.getConnection().isPipelined();
+            String status = factory.getConnection().ping();
+            if (this.isDebugging()) {
+                logger.info("Verifying Redis Server ping: {}", status);
+            }
+            return String4j.isNotEmpty(status);
+        } catch (Exception e) {
+            logger.error("Checking Redis connection got an exception: {}", e.getMessage(), e);
+            return false;
+        }
+    }
+
+    /**
+     * Checks if a Redis connection template is connected.
+     * Returns true if the template is not null and a connection can be established without errors.
+     * Uses pipelined connection status for checking.
+     *
+     * @param template The RedisConnectionFactory to check, class {@link RedisConnectionFactory}
+     * @return true if the template is connected and can perform pipelined operations; false otherwise.
+     */
+    @Override
+    public boolean isConnected(RedisTemplate<String, Object> template) {
+        if (template == null || template.getConnectionFactory() == null) {
+            return false;
+        }
+        try {
+            String status = Objects.requireNonNull(template.getConnectionFactory()).getConnection().ping();
+            if (this.isDebugging()) {
+                logger.info("Verifying Redis Server ping: {}", status);
+            }
+            return String4j.isNotEmpty(status);
         } catch (Exception e) {
             logger.error("Checking Redis connection got an exception: {}", e.getMessage(), e);
             return false;

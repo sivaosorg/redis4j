@@ -139,4 +139,14 @@ public interface Redis4jConfigService {
      * @return true if the factory is connected and can perform pipelined operations; false otherwise.
      */
     boolean isConnected(RedisConnectionFactory factory);
+
+    /**
+     * Checks if a Redis connection template is connected.
+     * Returns true if the template is not null and a connection can be established without errors.
+     * Uses pipelined connection status for checking.
+     *
+     * @param template The RedisConnectionFactory to check, class {@link RedisConnectionFactory}
+     * @return true if the template is connected and can perform pipelined operations; false otherwise.
+     */
+    boolean isConnected(RedisTemplate<String, Object> template);
 }

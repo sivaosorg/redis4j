@@ -8,6 +8,7 @@ import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.connection.lettuce.LettucePoolingClientConfiguration;
@@ -36,33 +37,39 @@ public class Redis4jConfig {
     }
 
     @Bean
+    @Primary
     @ConditionalOnMissingBean(name = "defaultPoolConfig")
     public JedisPoolConfig defaultPoolConfig() {
         return redis4jConfigService.createDefaultPoolConfig();
     }
 
     @Bean
+    @Primary
     @ConditionalOnMissingBean(name = "jedisPool")
     public JedisPool jedisPool() {
         return redis4jConfigService.createPool(this.defaultPoolConfig());
     }
 
     @Bean
+    @Primary
     public Jedis jedisClient() {
         return redis4jConfigService.createClient(this.jedisPool());
     }
 
     @Bean
+    @Primary
     public RedisStandaloneConfiguration defaultStandaloneConfig() {
         return redis4jConfigService.getDefaultStandaloneConfig();
     }
 
     @Bean
+    @Primary
     public LettucePoolingClientConfiguration lettucePoolingClientConfig() {
         return redis4jConfigService.createLettucePoolingClientConfig(this.defaultPoolConfig());
     }
 
     @Bean
+    @Primary
     public LettuceConnectionFactory factory() {
         return redis4jConfigService.createLettuceConnectionFactory(this.defaultStandaloneConfig(), this.lettucePoolingClientConfig());
     }

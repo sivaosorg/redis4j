@@ -31,6 +31,7 @@ import org.unify4j.common.String4j;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
+import redis.clients.jedis.exceptions.JedisException;
 
 import javax.annotation.PostConstruct;
 import java.time.Duration;
@@ -137,7 +138,12 @@ public class Redis4jConfigServiceImpl implements Redis4jConfigService {
      */
     @Override
     public Jedis createClient(JedisPool pool) {
-        return pool == null ? null : pool.getResource();
+        try {
+            return pool == null ? null : pool.getResource();
+        } catch (JedisException e) {
+            logger.error("\uD83D\uDD34 Redis4j, creating Jedis client got an exception: {}", e.getMessage(), e);
+            return null;
+        }
     }
 
     /**

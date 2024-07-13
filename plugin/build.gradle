@@ -1,0 +1,163 @@
+/*
+ * This generated file contains a sample Gradle plugin project to get you started.
+ * For more details on writing Custom Plugins, please refer to https://docs.gradle.org/8.6/userguide/custom_plugins.html in the Gradle documentation.
+ */
+//file:noinspection VulnerableLibrariesLocal
+//file:noinspection SpellCheckingInspection
+buildscript {
+    repositories {
+        // Use Maven Central for resolving dependencies.
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'org.yaml:snakeyaml:2.0'
+    }
+}
+
+plugins {
+    // Apply the Java Gradle plugin development plugin to add support for developing Gradle plugins
+    id 'java-gradle-plugin'
+
+    // Apply the Groovy plugin to add support for Groovy
+    id 'groovy'
+}
+
+apply plugin: 'java'
+apply plugin: 'eclipse'
+
+// Set the Java version compatibility for the project
+// sourceCompatibility = '1.8'
+
+repositories {
+    // Use Maven Central for resolving dependencies.
+    mavenCentral()
+}
+
+import org.yaml.snakeyaml.Yaml
+
+class JarConfig {
+    boolean enabled
+    String source
+
+    JarConfig(Map<String, Object> config) {
+        enabled = config['enabled'] ?: false
+        source = config['source'] ?: ''
+    }
+}
+
+class NgConfig {
+    String name
+    String version
+    boolean enabledLink
+    List<JarConfig> jars
+
+    @SuppressWarnings('GroovyAssignabilityCheck')
+    NgConfig(Map<String, Object> configs) {
+        name = configs.containsKey('name') ? configs['name'] : 'bot4j'
+        version = configs.containsKey('version') ? configs['version'] : 'v0.0.0'
+        enabledLink = configs.containsKey('enabled_link') ? configs['enabled_link'] : false
+        // jars = configs.containsKey('jars') ? configs['jars'] : [] // List<String> jars
+        jars = configs.containsKey('jars') ? configs['jars'].collect { new JarConfig(it) } : []
+    }
+}
+
+// Define ngConfig as a static global variable
+NgConfig ngConfig = loadNgConfig()
+
+NgConfig loadNgConfig() {
+    def configs = file('gradle.yml')
+    if (configs.exists()) {
+        def yaml = new Yaml()
+        def config = yaml.load(new FileInputStream(configs))
+        println '⌛ Loading NgConfigs configuration via gradle.yml'
+        return new NgConfig(config['ng'] as Map<String, Object>)
+    } else {
+        println '⚠️ gradle.yml not found, using default configuration'
+        return new NgConfig(new HashMap<String, Object>())
+    }
+}
+
+// Define a task to build the Groovy library into a JAR
+tasks.register('buildGroovyJar', Jar) {
+    // Set the base directory for the source files
+    from 'src/main/groovy'
+    // Set the destination directory for the compiled classes
+    into('')
+    archiveFileName = "${ngConfig.getName()}" + ".jar"
+    version("${ngConfig.getVersion()}")
+    include '**/*.groovy'
+}
+
+// Configure the build task to depend on the buildGroovyJar task
+tasks.named('build') {
+    dependsOn(buildGroovyJar)
+}
+
+tasks.jar {
+    archivesBaseName = "${ngConfig.getName()}"
+    version = "${ngConfig.getVersion()}"
+
+    // Handle duplicates
+    // duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    // Compressing the external JAR files listed in gradle.yml using zipTree if enabled_link is true
+    if (ngConfig.isEnabledLink() && !ngConfig.getJars().isEmpty()) {
+        ngConfig.getJars().each { jar ->
+            if (jar.isEnabled() && !jar.getSource().isEmpty()) {
+                println("📦 Jar compressing... [${jar.getSource()}]")
+                from {
+                    zipTree(file(jar.getSource()))
+                }
+            }
+        }
+    } else {
+        println '⚠️ Skipping compression of dependency JAR files...'
+    }
+}
+
+// Add dependencies
+dependencies {
+    // Add the dependencies listed in the gradle.yml file
+    if (!ngConfig.getJars().isEmpty()) {
+        ngConfig.getJars().each { jar ->
+            if (!jar.getSource().isEmpty()) {
+                println("🔄 Jar mounting... [${jar.getSource()}]")
+                implementation files(jar.getSource())
+            }
+        }
+    } else {
+        println '⚠️ No JAR files specified in gradle.yml for dependencies.'
+    }
+    // Use the awesome Spock testing and specification framework
+    testImplementation libs.spock.core
+    // Incorporate JUnit Jupiter API version 4.13.2 for unit testing,
+    // enabling developers to write and execute tests using the JUnit testing framework.
+    testImplementation 'junit:junit:4.13.2'
+    // Use JUnit Platform launcher for test runtime
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    // Use SLF4J (Simple Logging Facade for Java) API version 1.7.30 for flexible logging abstraction,
+    // allowing the application to bind with various logging frameworks at runtime.
+    testImplementation 'org.slf4j:slf4j-api:1.7.30'
+    // The "logback-classic" library, version 1.4.12, is a robust logging framework for Java applications,
+    // offering flexible and customizable logging functionalities to efficiently manage and analyze application logs.
+    implementation 'ch.qos.logback:logback-classic:1.4.12'
+    // Add dependencies for JAXB, activation, and Jackson libraries
+    // JAXB is commonly used for marshalling and unmarshalling XML data in Java applications.
+    // If your project deals with XML data and you need to convert Java objects to XML (marshalling) or vice versa (unmarshalling), then JAXB may be necessary.
+    implementation('javax.xml.bind:jaxb-api:2.3.0')
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.17.0'
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.17.0'
+    // The activation library provides support for the JavaBeans Activation Framework, which is used to determine the type of an arbitrary piece of data,
+    // encapsulate access to it, discover the operations available on it, and to instantiate the appropriate bean to perform those operations.
+    // It's typically used in JavaMail API and other contexts where dynamic loading of data types is required.
+    implementation('javax.activation:activation:1.1')
+    // Jackson is a popular JSON library for Java, used for parsing JSON data into Java objects and vice versa.
+    // If your project deals with JSON data, then Jackson can be very useful for serialization and deserialization.
+    implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-joda', version: '2.17.0'
+    // The "unirest-java" library, version 3.13.10, provides streamlined HTTP communication capabilities for Java applications, simplifying API interactions and network requests.
+    implementation group: 'com.konghq', name: 'unirest-java', version: '3.13.10'
+    // The "json-path" library, version 2.9.0, facilitates easy manipulation and querying of JSON data structures in Java applications,
+    // offering powerful tools for navigating and extracting data from JSON documents.
+    implementation group: 'com.jayway.jsonpath', name: 'json-path', version: '2.9.0'
+    // The "validation-api" library, version 2.0.1.Final, provides tools for validating Java objects according to defined constraints.
+    implementation group: 'javax.validation', name: 'validation-api', version: '2.0.1.Final'
+}

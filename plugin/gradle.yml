@@ -1,0 +1,9 @@
+ng:
+  name: redis4j
+  version: v1.0.0
+  enabled_link: false # enable compression and attachment of the external libraries
+  jars:
+    - enabled: false # enable compression and attachment of the external libraries
+      source: "./../libs/unify4j-v1.0.0.jar" # lib Jar
+    - enabled: false
+      source: ""

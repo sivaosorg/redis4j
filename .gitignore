@@ -8,6 +8,7 @@ logs/
 plugin/build/
 plugin/bin/
 application.local.yml
+application-local.yml
 
 ### STS ###
 .apt_generated

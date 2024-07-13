@@ -4,5 +4,20 @@
 # ################################
 spring:
   # noinspection SpellCheckingInspection
-  redis4j:
-    enabled: false
+  redis4j: # Redis4J specific configuration
+    enabled: false # Toggle to enable or disable Redis4J
+    debugging: false # Toggle debugging for Redis4J
+  redis: # Configuration for the Redis connection
+    database: 0 # The database index to use (default is 0)
+    host: 127.0.0.1 # The host where the Redis server is running
+    port: 6379 # The port on which the Redis server is listening
+    password: "****" # Optional password to authenticate with Redis (if required)
+    timeout: 2000ms # The timeout value for connecting to Redis
+    jedis: # Configuration for connection pooling with Jedis
+      pool:
+        max-active: 8 # Maximum number of connections in the Jedis pool
+        max-idle: 8 # Maximum number of idle connections in the Jedis pool
+        min-idle: 0 # Minimum number of idle connections in the Jedis pool
+        max-wait: -1ms # Maximum wait time for a connection from the Jedis pool
+      max-total: 8 # The number of attempts to reconnect in case of a failure
+      test-on-borrow: true # The time to wait between reconnect attempts

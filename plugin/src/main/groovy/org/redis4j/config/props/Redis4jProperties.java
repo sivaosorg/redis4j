@@ -14,6 +14,7 @@ public class Redis4jProperties implements Serializable {
     }
 
     private boolean enabled = false;
+    private boolean debugging = false;
 
     public boolean isEnabled() {
         return enabled;
@@ -23,8 +24,16 @@ public class Redis4jProperties implements Serializable {
         this.enabled = enabled;
     }
 
+    public boolean isDebugging() {
+        return debugging;
+    }
+
+    public void setDebugging(boolean debugging) {
+        this.debugging = debugging;
+    }
+
     @Override
     public String toString() {
-        return String.format("Redis4j { enabled: %s }", enabled);
+        return String.format("Redis4j { enabled: %s, debugging: %s }", enabled, debugging);
     }
 }

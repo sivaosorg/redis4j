@@ -1,5 +1,6 @@
 package org.redis4j.service;
 
+import org.redis4j.config.props.Redis4jProperties;
 import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.cache.CacheManager;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
@@ -25,7 +26,16 @@ public interface Redis4jConfigService {
      *
      * @return Configured JedisPoolConfig instance for Redis connection pooling, class {@link JedisPoolConfig}
      */
-    JedisPoolConfig createPoolConfig();
+    JedisPoolConfig createDefaultPoolConfig();
+
+    /**
+     * Creates and configures a JedisPoolConfig instance based on provided Redis4jProperties and RedisProperties.
+     *
+     * @param properties      The Redis4jProperties containing Redis4J-specific configuration properties, class {@link Redis4jProperties}
+     * @param redisProperties The RedisProperties containing general Redis connection and pooling properties, class {@link RedisProperties}
+     * @return Initialized JedisPoolConfig instance configured with the specified properties, class {@link JedisPoolConfig}
+     */
+    JedisPoolConfig createPoolConfig(Redis4jProperties properties, RedisProperties redisProperties);
 
     /**
      * Creates a JedisPool instance based on the provided JedisPoolConfig and Redis connection properties.

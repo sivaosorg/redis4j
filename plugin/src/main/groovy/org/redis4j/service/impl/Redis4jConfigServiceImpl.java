@@ -79,7 +79,19 @@ public class Redis4jConfigServiceImpl implements Redis4jConfigService {
      * @return Configured JedisPoolConfig instance for Redis connection pooling, class {@link JedisPoolConfig}
      */
     @Override
-    public JedisPoolConfig createPoolConfig() {
+    public JedisPoolConfig createDefaultPoolConfig() {
+        return this.createPoolConfig(properties, redisProperties);
+    }
+
+    /**
+     * Creates and configures a JedisPoolConfig instance based on provided Redis4jProperties and RedisProperties.
+     *
+     * @param properties      The Redis4jProperties containing Redis4J-specific configuration properties, class {@link Redis4jProperties}
+     * @param redisProperties The RedisProperties containing general Redis connection and pooling properties, class {@link RedisProperties}
+     * @return Initialized JedisPoolConfig instance configured with the specified properties, class {@link JedisPoolConfig}
+     */
+    @Override
+    public JedisPoolConfig createPoolConfig(Redis4jProperties properties, RedisProperties redisProperties) {
         final JedisPoolConfig config = new JedisPoolConfig();
         RedisProperties.Pool pool = redisProperties.getJedis().getPool();
         config.setTestOnBorrow(properties.isTestOnBorrow());

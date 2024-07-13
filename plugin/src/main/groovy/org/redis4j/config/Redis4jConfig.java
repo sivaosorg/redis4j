@@ -3,6 +3,7 @@ package org.redis4j.config;
 import org.redis4j.service.Redis4jConfigService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
@@ -21,6 +22,11 @@ import redis.clients.jedis.JedisPoolConfig;
 @Configuration
 @EnableCaching
 @EnableRedisRepositories
+@ConditionalOnProperty(
+        value = "spring.redis4j.enabled",
+        havingValue = "true",
+        matchIfMissing = false
+)
 public class Redis4jConfig {
     protected final Redis4jConfigService redis4jConfigService;
 

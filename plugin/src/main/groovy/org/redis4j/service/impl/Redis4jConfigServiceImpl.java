@@ -17,6 +17,7 @@ import org.springframework.cache.CacheManager;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.cache.RedisCacheWriter;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisPassword;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
@@ -279,5 +280,26 @@ public class Redis4jConfigServiceImpl implements Redis4jConfigService {
                         RedisCacheWriter.nonLockingRedisCacheWriter(factory))
                 .cacheDefaults(cacheConfig)
                 .build();
+    }
+
+    /**
+     * Checks if a Redis connection factory is connected.
+     * Returns true if the factory is not null and a connection can be established without errors.
+     * Uses pipelined connection status for checking.
+     *
+     * @param factory The RedisConnectionFactory to check, class {@link RedisConnectionFactory}
+     * @return true if the factory is connected and can perform pipelined operations; false otherwise.
+     */
+    @Override
+    public boolean isConnected(RedisConnectionFactory factory) {
+        if (factory == null) {
+            return false;
+        }
+        try {
+            return factory.getConnection().isPipelined();
+        } catch (Exception e) {
+            logger.error("Checking Redis connection got an exception: {}", e.getMessage(), e);
+            return false;
+        }
     }
 }

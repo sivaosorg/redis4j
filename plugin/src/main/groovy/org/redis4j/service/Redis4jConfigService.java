@@ -3,6 +3,7 @@ package org.redis4j.service;
 import org.redis4j.config.props.Redis4jProperties;
 import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.cache.CacheManager;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.connection.lettuce.LettucePoolingClientConfiguration;
@@ -128,4 +129,14 @@ public interface Redis4jConfigService {
      * @return Initialized CacheManager configured with the specified connection factory, class {@link CacheManager}
      */
     CacheManager createCacheManager(LettuceConnectionFactory factory);
+
+    /**
+     * Checks if a Redis connection factory is connected.
+     * Returns true if the factory is not null and a connection can be established without errors.
+     * Uses pipelined connection status for checking.
+     *
+     * @param factory The RedisConnectionFactory to check, class {@link RedisConnectionFactory}
+     * @return true if the factory is connected and can perform pipelined operations; false otherwise.
+     */
+    boolean isConnected(RedisConnectionFactory factory);
 }

@@ -89,6 +89,46 @@ implementation group: 'io.lettuce', name: 'lettuce-core', version: '6.2.3.RELEAS
 implementation group: 'redis.clients', name: 'jedis', version: '5.1.3'
 ```
 
+## Application configuration
+
+> Read more [here](plugin/src/main/resources/application.example.yml)
+
+```yaml
+# ################################
+# Spring Redis4J Config
+# 2024-06-16 10:48:54
+# ################################
+spring:
+  # noinspection SpellCheckingInspection
+  redis4j: # Redis4J specific configuration
+    enabled: false # Toggle to enable or disable Redis4J
+    debugging: false # Toggle debugging for Redis4J
+    test_on_borrow: true # Test the connection on borrowing from the pool
+    test_on_return: true # Test the connection on returning to the pool
+    test_while_idle: true # Test the connection while idle in the pool
+    block_when_exhausted: true # Block when the connection pool is exhausted
+    shared_native_connection: true # Enable sharing of native connections across multiple clients
+    num_tests_per_eviction_run: 3 # Number of tests to run on eviction
+    min_evict_idle_duration: 60s # Minimum time for an idle object before it is evicted
+    duration_between_eviction_runs: 30s # Time between eviction runs
+    # The maximum amount of time a Redis command (or operation) can take before it is considered to have timed out.
+    # This timeout ensures that if a Redis command execution exceeds this duration,
+    # the client library will abort the operation and throw a timeout exception.
+    execution_command_timeout: 100ms
+  redis: # Configuration for the Redis connection
+    database: 0 # The database index to use (default is 0)
+    host: 127.0.0.1 # The host where the Redis server is running
+    port: 6379 # The port on which the Redis server is listening
+    password: "****" # Optional password to authenticate with Redis (if required)
+    timeout: 2000ms # The timeout value for connecting to Redis
+    jedis: # Configuration for connection pooling with Jedis
+      pool:
+        max-active: 8 # Maximum number of connections in the Jedis pool
+        max-idle: 8 # Maximum number of idle connections in the Jedis pool
+        min-idle: 0 # Minimum number of idle connections in the Jedis pool
+        max-wait: -1ms # Maximum wait time for a connection from the Jedis pool
+```
+
 ## Integration
 
 1. Add dependency into file `build.gradle`

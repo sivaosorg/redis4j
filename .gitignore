@@ -7,6 +7,7 @@ logs/
 !**/src/test/**
 plugin/build/
 plugin/bin/
+application.local.yml
 
 ### STS ###
 .apt_generated

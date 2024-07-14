@@ -55,7 +55,7 @@ public class Redis4jStatusConfig {
      *
      * @return true if the Redis dispatch template is initialized; false otherwise.
      */
-    public boolean isRedisDispatchAvailable() {
+    public boolean isDispatchAvailable() {
         return this.redisTemplate != null;
     }
 

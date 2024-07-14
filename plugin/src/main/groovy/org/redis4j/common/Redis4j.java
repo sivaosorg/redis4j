@@ -104,7 +104,7 @@ public class Redis4j {
         if (e == null) {
             return false;
         }
-        return e.isRedisDispatchAvailable();
+        return e.isDispatchAvailable();
     }
 
     /**

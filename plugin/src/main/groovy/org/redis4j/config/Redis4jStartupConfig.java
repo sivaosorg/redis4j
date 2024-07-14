@@ -32,7 +32,7 @@ public class Redis4jStartupConfig implements ApplicationRunner {
             logger.error("\uD83D\uDD34 Redis4j startup, unable to connect to Redis Server");
             return;
         }
-        if (config.isRedisDispatchAvailable()) {
+        if (config.isDispatchAvailable()) {
             logger.info("\uD83D\uDFE2 Redis4j startup, RedisTemplate<String, Object> created successfully");
         } else {
             logger.error("\uD83D\uDD34 Redis4j startup, unable to create RedisTemplate<String, Object>");

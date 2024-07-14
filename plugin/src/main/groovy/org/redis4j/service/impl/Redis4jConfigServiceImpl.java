@@ -35,7 +35,6 @@ import redis.clients.jedis.exceptions.JedisException;
 
 import javax.annotation.PostConstruct;
 import java.time.Duration;
-import java.util.Objects;
 
 @SuppressWarnings({"FieldCanBeLocal", "DuplicatedCode"})
 @Service
@@ -325,15 +324,6 @@ public class Redis4jConfigServiceImpl implements Redis4jConfigService {
         if (template == null || template.getConnectionFactory() == null) {
             return false;
         }
-        try {
-            String status = Objects.requireNonNull(template.getConnectionFactory()).getConnection().ping();
-            if (this.isDebugging()) {
-                logger.info("Verifying Redis Server ping: {}", status);
-            }
-            return String4j.isNotEmpty(status);
-        } catch (Exception e) {
-            logger.error("Checking Redis connection got an exception: {}", e.getMessage(), e);
-            return false;
-        }
+        return this.isConnected(template.getConnectionFactory());
     }
 }

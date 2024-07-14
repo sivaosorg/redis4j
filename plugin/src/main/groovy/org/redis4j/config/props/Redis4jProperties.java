@@ -116,7 +116,7 @@ public class Redis4jProperties implements Serializable {
 
     @Override
     public String toString() {
-        return String.format("Redis4j { enabled: %s, debugging: %s, test_on_borrow: %s, test_on_return: %s, test_while_idle: %s, block_when_exhausted: %s, num_tests_per_eviction_run: %d, min_evict_idle_duration: %s, duration_between_eviction_runs: %s, execution_command_timeout: %s, shared_native_connection: %s }",
-                enabled, debugging, testOnBorrow, testOnReturn, testWhileIdle, blockWhenExhausted, numTestsPerEvictionRun, minEvictIdleDuration, durationBetweenEvictionRuns, executionCommandTimeout, sharedNativeConnection);
+        return String.format("Redis4j { enabled: %s, debugging: %s, test_on_borrow: %s, test_on_return: %s, test_while_idle: %s, block_when_exhausted: %s, num_tests_per_eviction_run: %d, duration_between_eviction_runs: %s, execution_command_timeout: %s, shared_native_connection: %s }",
+                enabled, debugging, testOnBorrow, testOnReturn, testWhileIdle, blockWhenExhausted, numTestsPerEvictionRun, durationBetweenEvictionRuns, executionCommandTimeout, sharedNativeConnection);
     }
 }

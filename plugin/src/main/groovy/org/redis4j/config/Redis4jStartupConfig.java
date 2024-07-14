@@ -7,6 +7,7 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
+import org.unify4j.model.enums.IconType;
 
 @Component
 @ConditionalOnProperty(
@@ -27,20 +28,20 @@ public class Redis4jStartupConfig implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) throws Exception {
         if (config.isConnected()) {
-            logger.info("\uD83D\uDFE2 Redis4j startup, connected Redis Server successfully");
+            logger.info("{} Redis4j startup, connected Redis Server successfully", IconType.SUCCESS.getCode());
         } else {
-            logger.error("\uD83D\uDD34 Redis4j startup, unable to connect to Redis Server");
+            logger.error("{} Redis4j startup, unable to connect to Redis Server", IconType.ERROR.getCode());
             return;
         }
         if (config.isDispatchAvailable()) {
-            logger.info("\uD83D\uDFE2 Redis4j startup, RedisTemplate<String, Object> created successfully");
+            logger.info("{} Redis4j startup, RedisTemplate<String, Object> created successfully", IconType.SUCCESS.getCode());
         } else {
-            logger.error("\uD83D\uDD34 Redis4j startup, unable to create RedisTemplate<String, Object>");
+            logger.error("{} Redis4j startup, unable to create RedisTemplate<String, Object>", IconType.ERROR.getCode());
         }
         if (config.isStringDispatchAvailable()) {
-            logger.info("\uD83D\uDFE2 Redis4j startup, StringRedisTemplate created successfully");
+            logger.info("{} Redis4j startup, StringRedisTemplate created successfully", IconType.SUCCESS.getCode());
         } else {
-            logger.error("\uD83D\uDD34 Redis4j startup, unable to create StringRedisTemplate");
+            logger.error("{} Redis4j startup, unable to create StringRedisTemplate", IconType.ERROR.getCode());
         }
     }
 }

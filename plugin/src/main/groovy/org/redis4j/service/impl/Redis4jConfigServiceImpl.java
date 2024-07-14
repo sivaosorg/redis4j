@@ -28,6 +28,7 @@ import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.stereotype.Service;
 import org.unify4j.common.Object4j;
 import org.unify4j.common.String4j;
+import org.unify4j.model.enums.IconType;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
@@ -302,7 +303,7 @@ public class Redis4jConfigServiceImpl implements Redis4jConfigService {
         try {
             String status = factory.getConnection().ping();
             if (this.isDebugging()) {
-                logger.info("Verifying Redis Server ping: {}", status);
+                logger.info("{} Verifying Redis Server ping: {}", IconType.DEBUG.getCode(), status);
             }
             return String4j.isNotEmpty(status);
         } catch (Exception e) {

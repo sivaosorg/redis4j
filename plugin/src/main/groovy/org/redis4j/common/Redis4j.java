@@ -6,8 +6,6 @@ import org.redis4j.service.Redis4jConfigService;
 import org.redis4j.service.Redis4jService;
 import org.redis4j.service.impl.Redis4jConfigServiceImpl;
 import org.redis4j.service.impl.Redis4jServiceImpl;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.BoundSetOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -17,12 +15,14 @@ import org.unify4j.model.c.Pair;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public abstract class Redis4j {
-    protected static final Logger logger = LoggerFactory.getLogger(Redis4j.class);
     protected static Redis4jService jService;
     protected static Redis4jConfigService service;
     private static Redis4jStatusConfig jStatusConfig;
+    private static final Lock lock = new ReentrantLock();
 
     /**
      * Provides an instance of Redis4jStatusConfig.
@@ -32,15 +32,20 @@ public abstract class Redis4j {
      * @return An instance of Redis4jStatusConfig, class {@link Redis4jStatusConfig}
      */
     protected static Redis4jStatusConfig jStatusConfigProvider() {
-        if (Object4j.allNotNull(jStatusConfig)) {
-            return jStatusConfig;
-        }
+        lock.lock();
         try {
-            jStatusConfig = Redis4jBeanConfig.getBean(Redis4jStatusConfig.class);
-        } catch (Exception ignored) {
+            if (Object4j.allNotNull(jStatusConfig)) {
+                return jStatusConfig;
+            }
+            try {
+                jStatusConfig = Redis4jBeanConfig.getBean(Redis4jStatusConfig.class);
+            } catch (Exception ignored) {
 
+            }
+            return jStatusConfig;
+        } finally {
+            lock.unlock();
         }
-        return jStatusConfig;
     }
 
     /**
@@ -51,11 +56,16 @@ public abstract class Redis4j {
      * @return An instance of Redis4jConfigService, class {@link Redis4jConfigService}
      */
     public static Redis4jConfigService provider() {
-        if (Object4j.allNotNull(service)) {
+        lock.lock();
+        try {
+            if (Object4j.allNotNull(service)) {
+                return service;
+            }
+            service = Redis4jBeanConfig.getBean(Redis4jConfigServiceImpl.class);
             return service;
+        } finally {
+            lock.unlock();
         }
-        service = Redis4jBeanConfig.getBean(Redis4jConfigServiceImpl.class);
-        return service;
     }
 
     /**
@@ -67,15 +77,20 @@ public abstract class Redis4j {
      * @return An instance of Redis4jService, class {@link Redis4jService}
      */
     public static Redis4jService jProvider() {
-        if (Object4j.allNotNull(jService)) {
-            return jService;
-        }
+        lock.lock();
         try {
-            jService = Redis4jBeanConfig.getBean(Redis4jServiceImpl.class);
-        } catch (Exception ignored) {
+            if (Object4j.allNotNull(jService)) {
+                return jService;
+            }
+            try {
+                jService = Redis4jBeanConfig.getBean(Redis4jServiceImpl.class);
+            } catch (Exception ignored) {
 
+            }
+            return jService;
+        } finally {
+            lock.unlock();
         }
-        return jService;
     }
 
     /**

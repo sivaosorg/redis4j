@@ -1,11 +1,16 @@
 package org.redis4j.config;
 
+import io.lettuce.core.RedisClient;
+import io.lettuce.core.event.EventBus;
+import io.lettuce.core.resource.ClientResources;
+import io.lettuce.core.resource.DefaultClientResources;
 import org.redis4j.service.Redis4jConfigService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.cache.interceptor.CacheErrorHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -23,11 +28,7 @@ import redis.clients.jedis.JedisPoolConfig;
 @Configuration
 @EnableCaching
 @EnableRedisRepositories
-@ConditionalOnProperty(
-        value = "spring.redis4j.enabled",
-        havingValue = "true",
-        matchIfMissing = false
-)
+@ConditionalOnProperty(value = "spring.redis4j.enabled", havingValue = "true", matchIfMissing = false)
 public class Redis4jConfig {
     protected final Redis4jConfigService redis4jConfigService;
 
@@ -87,5 +88,27 @@ public class Redis4jConfig {
     @Bean
     public CacheManager cacheManager() {
         return redis4jConfigService.createCacheManager(this.factory());
+    }
+
+    @Bean
+    public ClientResources clientResources() {
+        return DefaultClientResources.create();
+    }
+
+    @Bean
+    public RedisClient redisClient() {
+        return RedisClient.create(clientResources());
+    }
+
+    @Bean
+    public EventBus eventBus() {
+        return clientResources().eventBus();
+    }
+
+    @Bean
+    @Primary
+    @ConditionalOnMissingBean(CacheErrorHandler.class)
+    public CacheErrorHandler errorHandler() {
+        return new DefaultRedis4jCacheErrorConfig();
     }
 }

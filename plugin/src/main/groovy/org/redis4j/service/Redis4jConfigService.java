@@ -1,5 +1,6 @@
 package org.redis4j.service;
 
+import io.lettuce.core.RedisClient;
 import org.redis4j.config.props.Redis4jProperties;
 import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.cache.CacheManager;
@@ -149,4 +150,11 @@ public interface Redis4jConfigService {
      * @return true if the template is connected and can perform pipelined operations; false otherwise.
      */
     boolean isConnected(RedisTemplate<String, Object> template);
+
+    /**
+     * Provides a Redis client configured with the connection details specified in the application properties.
+     *
+     * @return a configured instance of {@link RedisClient} ready to connect to the Redis server.
+     */
+    RedisClient clientProvider();
 }

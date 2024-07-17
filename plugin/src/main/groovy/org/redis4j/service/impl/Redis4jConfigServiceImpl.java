@@ -6,6 +6,8 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.lettuce.core.RedisClient;
+import io.lettuce.core.RedisURI;
 import org.redis4j.config.props.Redis4jProperties;
 import org.redis4j.service.Redis4jConfigService;
 import org.slf4j.Logger;
@@ -326,5 +328,20 @@ public class Redis4jConfigServiceImpl implements Redis4jConfigService {
             return false;
         }
         return this.isConnected(template.getConnectionFactory());
+    }
+
+    /**
+     * Provides a Redis client configured with the connection details specified in the application properties.
+     *
+     * @return a configured instance of {@link RedisClient} ready to connect to the Redis server.
+     */
+    @Override
+    public RedisClient clientProvider() {
+        RedisURI uri = RedisURI.builder()
+                .withHost(redisProperties.getHost())
+                .withPort(redisProperties.getPort())
+                .withPassword(redisProperties.getPassword().toCharArray())
+                .build();
+        return RedisClient.create(uri);
     }
 }

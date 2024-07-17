@@ -1,5 +1,10 @@
 package org.redis4j.common;
 
+import io.lettuce.core.RedisClient;
+import io.lettuce.core.api.StatefulRedisConnection;
+import io.lettuce.core.api.async.RedisAsyncCommands;
+import io.lettuce.core.api.reactive.RedisReactiveCommands;
+import io.lettuce.core.api.sync.RedisCommands;
 import org.redis4j.config.Redis4jBeanConfig;
 import org.redis4j.config.Redis4jStatusConfig;
 import org.redis4j.service.Redis4jConfigService;
@@ -10,18 +15,26 @@ import org.springframework.data.redis.core.BoundSetOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
+import org.unify4j.common.Collection4j;
 import org.unify4j.common.Object4j;
+import org.unify4j.common.String4j;
+import org.unify4j.model.builder.HttpStatusBuilder;
+import org.unify4j.model.builder.HttpWrapBuilder;
 import org.unify4j.model.c.Pair;
+import org.unify4j.model.response.WrapResponse;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 
 public abstract class Redis4j {
     protected static Redis4jService jService;
     protected static Redis4jConfigService service;
-    private static Redis4jStatusConfig jStatusConfig;
+    protected static Redis4jStatusConfig jStatusConfig;
+    protected static RedisClient client;
+    protected static StatefulRedisConnection<String, String> connection;
     private static final Lock lock = new ReentrantLock();
 
     /**
@@ -88,6 +101,49 @@ public abstract class Redis4j {
 
             }
             return jService;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * Provides an instance of RedisClient.
+     * If an instance is already available, returns it.
+     * Otherwise, creates and returns a new instance using the Redis URI.
+     *
+     * @return An instance of RedisClient, class {@link RedisClient}
+     */
+    public static RedisClient clientProvider() {
+        lock.lock();
+        try {
+            if (Object4j.allNotNull(client)) {
+                return client;
+            }
+            client = provider().clientProvider();
+            return client;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * Provides an instance of StatefulRedisConnection.
+     * If an instance is already available, returns it.
+     * Otherwise, creates and returns a new instance using the RedisClient.
+     *
+     * @return An instance of StatefulRedisConnection, class {@link StatefulRedisConnection}
+     */
+    public static StatefulRedisConnection<String, String> connectionProvider() {
+        lock.lock();
+        try {
+            if (Object4j.allNotNull(connection)) {
+                return connection;
+            }
+            RedisClient c = clientProvider();
+            if (Object4j.allNotNull(c)) {
+                connection = c.connect();
+            }
+            return connection;
         } finally {
             lock.unlock();
         }
@@ -176,6 +232,33 @@ public abstract class Redis4j {
             return null;
         }
         return e.stringDispatch();
+    }
+
+    /**
+     * Provides an instance of RedisCommands for synchronous operations.
+     *
+     * @return An instance of RedisCommands, class {@link RedisCommands}
+     */
+    public static RedisCommands<String, String> syncCommands() {
+        return connectionProvider().sync();
+    }
+
+    /**
+     * Provides an instance of RedisAsyncCommands for asynchronous operations.
+     *
+     * @return An instance of RedisAsyncCommands, class {@link RedisAsyncCommands}
+     */
+    public static RedisAsyncCommands<String, String> asyncCommands() {
+        return connectionProvider().async();
+    }
+
+    /**
+     * Provides an instance of RedisReactiveCommands for reactive operations.
+     *
+     * @return An instance of RedisReactiveCommands, class {@link RedisReactiveCommands}
+     */
+    public static RedisReactiveCommands<String, String> reactiveCommands() {
+        return connectionProvider().reactive();
     }
 
     /**
@@ -1010,5 +1093,483 @@ public abstract class Redis4j {
             return -1;
         }
         return decreaseKeyByEx(key, value, timeout, unit);
+    }
+
+    /**
+     * Set a key-value pair in Redis.
+     *
+     * @param key   the key
+     * @param value the value
+     * @return the result of the set operation
+     */
+    public static String set(String key, String value) {
+        return syncCommands().set(key, value);
+    }
+
+    /**
+     * Get the value of a key from Redis.
+     *
+     * @param key the key
+     * @return the value
+     */
+    public static String get(String key) {
+        return syncCommands().get(key);
+    }
+
+    /**
+     * Publish a message to a Redis channel.
+     *
+     * @param channel the channel
+     * @param message the message
+     * @return the number of clients that received the message
+     */
+    public static Long publish(String channel, String message) {
+        return syncCommands().publish(channel, message);
+    }
+
+    /**
+     * Set a key-value pair with an expiration time.
+     *
+     * @param key     the key
+     * @param value   the value
+     * @param seconds the expiration time in seconds
+     * @return the result of the set operation
+     */
+    @SuppressWarnings({"SpellCheckingInspection"})
+    public static String setex(String key, String value, long seconds) {
+        return syncCommands().setex(key, seconds, value);
+    }
+
+    /**
+     * Check if a key exists in Redis.
+     *
+     * @param key the key
+     * @return true if the key exists, false otherwise
+     */
+    public static boolean exists(String key) {
+        return syncCommands().exists(key) > 0;
+    }
+
+    /**
+     * Increment the value of a key by one.
+     *
+     * @param key the key
+     * @return the new value
+     */
+    @SuppressWarnings({"SpellCheckingInspection"})
+    public static Long incr(String key) {
+        return syncCommands().incr(key);
+    }
+
+    /**
+     * Decrement the value of a key by one.
+     *
+     * @param key the key
+     * @return the new value
+     */
+    @SuppressWarnings({"SpellCheckingInspection"})
+    public static Long decr(String key) {
+        return syncCommands().decr(key);
+    }
+
+    /**
+     * Get the length of a list.
+     *
+     * @param key the key
+     * @return the length of the list
+     */
+    @SuppressWarnings({"SpellCheckingInspection"})
+    public static Long llen(String key) {
+        return syncCommands().llen(key);
+    }
+
+    /**
+     * Append a value to a list.
+     *
+     * @param key   the key
+     * @param value the value
+     * @return the length of the list after the append operation
+     */
+    @SuppressWarnings({"SpellCheckingInspection"})
+    public static Long rpush(String key, String value) {
+        return syncCommands().rpush(key, value);
+    }
+
+    /**
+     * Prepend a value to a list.
+     *
+     * @param key   the key
+     * @param value the value
+     * @return the length of the list after the prepend operation
+     */
+    @SuppressWarnings({"SpellCheckingInspection"})
+    public static Long lpush(String key, String value) {
+        return syncCommands().lpush(key, value);
+    }
+
+    /**
+     * Remove and get the first element in a list.
+     *
+     * @param key the key
+     * @return the value of the first element, or null if the list is empty
+     */
+    @SuppressWarnings({"SpellCheckingInspection"})
+    public static String lpop(String key) {
+        return syncCommands().lpop(key);
+    }
+
+    /**
+     * Remove and get the last element in a list.
+     *
+     * @param key the key
+     * @return the value of the last element, or null if the list is empty
+     */
+    @SuppressWarnings({"SpellCheckingInspection"})
+    public static String rpop(String key) {
+        return syncCommands().rpop(key);
+    }
+
+    /**
+     * Get a range of elements from a list.
+     *
+     * @param key   the key
+     * @param start the start index
+     * @param stop  the stop index
+     * @return the list of elements
+     */
+    @SuppressWarnings({"SpellCheckingInspection"})
+    public static List<String> lrange(String key, long start, long stop) {
+        return syncCommands().lrange(key, start, stop);
+    }
+
+    /**
+     * Set the value of an element in a list by its index.
+     *
+     * @param key   the key
+     * @param index the index
+     * @param value the value
+     * @return the result of the set operation
+     */
+    @SuppressWarnings({"SpellCheckingInspection"})
+    public static String lset(String key, long index, String value) {
+        return syncCommands().lset(key, index, value);
+    }
+
+    /**
+     * Remove elements from a list.
+     *
+     * @param key   the key
+     * @param count the number of elements to remove
+     * @param value the value to match
+     * @return the number of removed elements
+     */
+    public static Long lrm(String key, long count, String value) {
+        return syncCommands().lrem(key, count, value);
+    }
+
+    /**
+     * Get the value of a hash field.
+     *
+     * @param key   the key
+     * @param field the field
+     * @return the value of the field, or null if the field does not exist
+     */
+    @SuppressWarnings({"SpellCheckingInspection"})
+    public static String hget(String key, String field) {
+        return syncCommands().hget(key, field);
+    }
+
+    /**
+     * Set the value of a hash field.
+     *
+     * @param key   the key
+     * @param field the field
+     * @param value the value
+     * @return the result of the set operation
+     */
+    @SuppressWarnings({"SpellCheckingInspection"})
+    public static String hset(String key, String field, String value) {
+        syncCommands().hset(key, field, value);
+        return value;
+    }
+
+    /**
+     * Get all fields and values in a hash.
+     *
+     * @param key the key
+     * @return a map of fields and values
+     */
+    @SuppressWarnings({"SpellCheckingInspection"})
+    public static Map<String, String> hgetAll(String key) {
+        return syncCommands().hgetall(key);
+    }
+
+    /**
+     * Delete one or more hash fields.
+     *
+     * @param key    the key
+     * @param fields the fields
+     * @return the number of fields that were removed
+     */
+    @SuppressWarnings({"SpellCheckingInspection"})
+    public static Long hdel(String key, String... fields) {
+        return syncCommands().hdel(key, fields);
+    }
+
+    /**
+     * Check if a hash field exists.
+     *
+     * @param key   the key
+     * @param field the field
+     * @return true if the field exists, false otherwise
+     */
+    @SuppressWarnings({"SpellCheckingInspection"})
+    public static boolean hexists(String key, String field) {
+        return syncCommands().hexists(key, field);
+    }
+
+    /**
+     * Increment the integer value of a hash field by the given number.
+     *
+     * @param key   the key
+     * @param field the field
+     * @param value the increment value
+     * @return the new value
+     */
+    @SuppressWarnings({"SpellCheckingInspection"})
+    public static Long hincrBy(String key, String field, long value) {
+        return syncCommands().hincrby(key, field, value);
+    }
+
+    /**
+     * Get the time to live for a key.
+     *
+     * @param key the key
+     * @return the time to live in seconds, or -1 if the key does not have an expiration time
+     */
+    public static Long ttl(String key) {
+        return syncCommands().ttl(key);
+    }
+
+    /**
+     * Set a key's time to live in seconds.
+     *
+     * @param key     the key
+     * @param seconds the expiration time in seconds
+     * @return true if the timeout was set, false otherwise
+     */
+    public static boolean expire(String key, long seconds) {
+        return syncCommands().expire(key, seconds);
+    }
+
+    /**
+     * Set a key's time to live in milliseconds.
+     *
+     * @param key    the key
+     * @param millis the expiration time in milliseconds
+     * @return true if the timeout was set, false otherwise
+     */
+    @SuppressWarnings({"SpellCheckingInspection"})
+    public static boolean pexpire(String key, long millis) {
+        return syncCommands().pexpire(key, millis);
+    }
+
+    /**
+     * Remove the expiration time from a key.
+     *
+     * @param key the key
+     * @return true if the timeout was removed, false otherwise
+     */
+    public static boolean persist(String key) {
+        return syncCommands().persist(key);
+    }
+
+    /**
+     * Append a value to a key.
+     *
+     * @param key   the key
+     * @param value the value to append
+     * @return the length of the string after the append operation
+     */
+    public static Long append(String key, String value) {
+        return syncCommands().append(key, value);
+    }
+
+    /**
+     * Get the values of all the given keys.
+     *
+     * @param keys the keys
+     * @return a list of values
+     */
+    @SuppressWarnings({"SpellCheckingInspection"})
+    public static List<String> mget(String... keys) {
+        return syncCommands().mget(keys).stream()
+                .map(kv -> kv.hasValue() ? kv.getValue() : null)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Set multiple keys to multiple values.
+     *
+     * @param map the map of keys and values
+     * @return the result of the mset operation
+     */
+    @SuppressWarnings({"SpellCheckingInspection"})
+    public static String mset(Map<String, String> map) {
+        return syncCommands().mset(map);
+    }
+
+    /**
+     * Get the length of a string value stored at key.
+     *
+     * @param key the key
+     * @return the length of the string at key
+     */
+    public static Long strlen(String key) {
+        return syncCommands().strlen(key);
+    }
+
+    /**
+     * Get a substring of the string stored at a key.
+     *
+     * @param key   the key
+     * @param start the start offset
+     * @param end   the end offset
+     * @return the substring
+     */
+    @SuppressWarnings({"SpellCheckingInspection"})
+    public static String getrange(String key, long start, long end) {
+        return syncCommands().getrange(key, start, end);
+    }
+
+    /**
+     * Add a member to a set stored at key.
+     *
+     * @param key    the key
+     * @param member the member to add
+     * @return the number of elements that were added to the set
+     */
+    @SuppressWarnings({"SpellCheckingInspection"})
+    public static Long sadd(String key, String member) {
+        return syncCommands().sadd(key, member);
+    }
+
+    /**
+     * Remove a member from a set stored at key.
+     *
+     * @param key    the key
+     * @param member the member to remove
+     * @return the number of elements that were removed from the set
+     */
+    @SuppressWarnings({"SpellCheckingInspection"})
+    public static Long srem(String key, String member) {
+        return syncCommands().srem(key, member);
+    }
+
+    /**
+     * Get all the members in a set.
+     *
+     * @param key the key
+     * @return the members of the set
+     */
+    @SuppressWarnings({"SpellCheckingInspection"})
+    public static Set<String> smembers(String key) {
+        return syncCommands().smembers(key);
+    }
+
+    /**
+     * Add a member with a score to a sorted set stored at key.
+     *
+     * @param key    the key
+     * @param score  the score
+     * @param member the member to add
+     * @return the number of elements that were added to the sorted set
+     */
+    @SuppressWarnings({"SpellCheckingInspection"})
+    public static Long zadd(String key, double score, String member) {
+        return syncCommands().zadd(key, score, member);
+    }
+
+    /**
+     * Remove a member from a sorted set stored at key.
+     *
+     * @param key    the key
+     * @param member the member to remove
+     * @return the number of elements that were removed from the sorted set
+     */
+    @SuppressWarnings({"SpellCheckingInspection"})
+    public static Long zrem(String key, String member) {
+        return syncCommands().zrem(key, member);
+    }
+
+    /**
+     * Retrieves a map of default keys along with their Redis data types.
+     *
+     * @return a map where keys are default Redis keys and values are their corresponding data types.
+     */
+    public static Map<String, String> defaultKeysWk() {
+        Collection<String> keys = canDefaultKeys();
+        if (Collection4j.isEmpty(keys)) {
+            return Collections.emptyMap();
+        }
+        return keys.stream()
+                .collect(
+                        Collectors.toMap(
+                                key -> key,
+                                key -> syncCommands().type(key)
+                        )
+                );
+    }
+
+    /**
+     * Retrieves data from Redis based on the type of the specified key.
+     *
+     * @param key the Redis key for which data is to be retrieved.
+     * @return a wrapped HTTP response containing the retrieved data, or an error response if the key is empty,
+     * Redis connection fails, or the key type is unsupported.
+     */
+    @SuppressWarnings({"SpellCheckingInspection", "EnhancedSwitchMigration"})
+    public static WrapResponse<?> wget(String key) {
+        if (String4j.isEmpty(key)) {
+            return new HttpWrapBuilder<>().badRequest("key is required").build();
+        }
+        RedisCommands<String, String> command = syncCommands();
+        if (command == null) {
+            return new HttpWrapBuilder<>().internalServerError("Redis connection failure").build();
+        }
+        String type = command.type(key);
+        switch (type) {
+            case "string":
+                return new HttpWrapBuilder<>()
+                        .ok(command.get(key))
+                        .customFields("redis_key_type_stored", "string")
+                        .build();
+            case "list":
+                return new HttpWrapBuilder<>()
+                        .ok(command.lrange(key, 0, -1))
+                        .customFields("redis_key_type_stored", "list")
+                        .build();
+            case "hash":
+                return new HttpWrapBuilder<>()
+                        .ok(command.hgetall(key))
+                        .customFields("redis_key_type_stored", "hash")
+                        .build();
+            case "set":
+                return new HttpWrapBuilder<>()
+                        .ok(command.smembers(key))
+                        .customFields("redis_key_type_stored", "set")
+                        .build();
+            case "zset":
+                return new HttpWrapBuilder<>()
+                        .ok(command.zrange(key, 0, -1))
+                        .customFields("redis_key_type_stored", "zset")
+                        .build();
+            default:
+                return new HttpWrapBuilder<>()
+                        .message(String.format("unsupported type: %s", type))
+                        .statusCode(HttpStatusBuilder.UN_PROCESSABLE_ENTITY)
+                        .customFields("redis_key_type_stored_unsupported", type)
+                        .build();
+        }
     }
 }

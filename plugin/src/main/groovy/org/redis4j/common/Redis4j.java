@@ -1243,7 +1243,7 @@ public abstract class Redis4j {
      * @param callback An optional callback for handling exceptions, an instance of {@link Redis4jWrapCallback}.
      * @return The incremented value of the key, or -1 if an error occurs.
      */
-    public static long increaseKey( String key, Redis4jWrapCallback callback) {
+    public static long increaseKey(String key, Redis4jWrapCallback callback) {
         Redis4jService e = jProvider();
         if (e == null) {
             return -1;
@@ -1285,6 +1285,24 @@ public abstract class Redis4j {
     }
 
     /**
+     * Decreases the value of a numeric key in Redis, with an optional callback for handling exceptions.
+     * If the dispatch template or key is null or empty, returns -1 indicating failure.
+     * Uses Redis execute method to atomically decrement the key value.
+     * Logs any exceptions that occur during the operation.
+     *
+     * @param key      The key whose value is to be decremented.
+     * @param callback An optional callback for handling exceptions, an instance of {@link Redis4jWrapCallback}.
+     * @return The decremented value of the key, or -1 if an error occurs.
+     */
+    public static long decreaseKey(String key, Redis4jWrapCallback callback) {
+        Redis4jService e = jProvider();
+        if (e == null) {
+            return -1;
+        }
+        return e.decreaseKey(dispatch(), key, callback);
+    }
+
+    /**
      * Decreases the value of a numeric key in Redis.
      * If the dispatch template or key is null or empty, returns -1 indicating failure.
      * Uses Redis execute method to atomically decrement the key value.
@@ -1316,6 +1334,25 @@ public abstract class Redis4j {
             return -1;
         }
         return e.increaseKeyBy(dispatch(), key, value);
+    }
+
+    /**
+     * Increases the value of a numeric key in Redis by a specified increment, with an optional callback for handling exceptions.
+     * If the dispatch template, key, or increment value is invalid (null, empty, negative), returns -1 indicating failure.
+     * Uses Redis execute method with a callback to atomically increment the key value by the specified amount.
+     * Logs any exceptions that occur during the operation.
+     *
+     * @param key      The key whose value is to be incremented.
+     * @param value    The amount by which to increment the key's value.
+     * @param callback An optional callback for handling exceptions, an instance of {@link Redis4jWrapCallback}.
+     * @return The incremented value of the key, or -1 if an error occurs.
+     */
+    public static long increaseKeyBy(String key, long value, Redis4jWrapCallback callback) {
+        Redis4jService e = jProvider();
+        if (e == null) {
+            return -1;
+        }
+        return e.increaseKeyBy(dispatch(), key, value, callback);
     }
 
     /**
@@ -1354,6 +1391,25 @@ public abstract class Redis4j {
     }
 
     /**
+     * Decreases the value of a numeric key in Redis by a specified decrement, with an optional callback for handling exceptions.
+     * If the dispatch template, key, or decrement value is invalid (null, empty, negative), returns -1 indicating failure.
+     * Uses Redis execute method with a callback to atomically decrement the key value by the specified amount.
+     * Logs any exceptions that occur during the operation.
+     *
+     * @param key      The key whose value is to be decremented.
+     * @param value    The amount by which to decrement the key's value.
+     * @param callback An optional callback for handling exceptions, an instance of {@link Redis4jWrapCallback}.
+     * @return The decremented value of the key, or -1 if an error occurs.
+     */
+    public static long decreaseKeyBy(String key, long value, Redis4jWrapCallback callback) {
+        Redis4jService e = jProvider();
+        if (e == null) {
+            return -1;
+        }
+        return e.decreaseKeyBy(dispatch(), key, value, callback);
+    }
+
+    /**
      * Decreases the value of a numeric key in Redis by a specified decrement.
      * If the dispatch template, key, or decrement value is invalid (null, empty, negative), returns -1 indicating failure.
      * Uses Redis execute method with a callback to atomically decrement the key value by the specified amount.
@@ -1389,6 +1445,26 @@ public abstract class Redis4j {
     }
 
     /**
+     * Increases the value of a numeric key in Redis and sets an expiration time for the key, with an optional callback for handling exceptions.
+     * If the dispatch template, key, timeout, or time unit is invalid (null, empty, negative), returns -1 indicating failure.
+     * Uses the {@link #increaseKey} method to increment the key's value and then sets an expiration using the provided timeout and unit.
+     * Logs any exceptions that occur during the operation.
+     *
+     * @param key      The key whose value is to be incremented and set with expiration.
+     * @param timeout  The duration after which the key should expire.
+     * @param unit     The time unit of the expiration timeout.
+     * @param callback An optional callback for handling exceptions, an instance of {@link Redis4jWrapCallback}.
+     * @return The incremented value of the key, or -1 if an error occurs.
+     */
+    public static long increaseKeyEx(String key, long timeout, TimeUnit unit, Redis4jWrapCallback callback) {
+        Redis4jService e = jProvider();
+        if (e == null) {
+            return -1;
+        }
+        return e.increaseKeyEx(dispatch(), key, timeout, unit, callback);
+    }
+
+    /**
      * Increases the value of a numeric key in Redis and sets an expiration time for the key.
      * If the dispatch template, key, timeout, or time unit is invalid (null, empty, negative), returns -1 indicating failure.
      * Uses the {@link #increaseKey} method to increment the key's value and then sets an expiration using the provided timeout and unit.
@@ -1421,6 +1497,26 @@ public abstract class Redis4j {
             return -1;
         }
         return e.decreaseKeyEx(dispatch(), key, timeout, unit);
+    }
+
+    /**
+     * Decreases the value of a numeric key in Redis and sets an expiration time for the key, with an optional callback for handling exceptions.
+     * If the dispatch template, key, timeout, or time unit is invalid (null, empty, negative), returns -1 indicating failure.
+     * Uses the {@link #decreaseKey} method to decrement the key's value and then sets an expiration using the provided timeout and unit.
+     * Logs any exceptions that occur during the operation.
+     *
+     * @param key      The key whose value is to be decremented and set with expiration.
+     * @param timeout  The duration after which the key should expire.
+     * @param unit     The time unit of the expiration timeout.
+     * @param callback An optional callback for handling exceptions, an instance of {@link Redis4jWrapCallback}.
+     * @return The decremented value of the key, or -1 if an error occurs.
+     */
+    public static long decreaseKeyEx(String key, long timeout, TimeUnit unit, Redis4jWrapCallback callback) {
+        Redis4jService e = jProvider();
+        if (e == null) {
+            return -1;
+        }
+        return e.decreaseKeyEx(dispatch(), key, timeout, unit, callback);
     }
 
     /**
@@ -1460,6 +1556,27 @@ public abstract class Redis4j {
     }
 
     /**
+     * Increases the value of a numeric key in Redis by a specified increment and sets an expiration time for the key, with an optional callback for handling exceptions.
+     * If the dispatch template, key, timeout, unit, or value is invalid (null, empty, negative), returns -1 indicating failure.
+     * Uses the {@link #increaseKeyBy} method to increment the key's value by the specified amount and then sets an expiration using the provided timeout and unit.
+     * Logs any exceptions that occur during the operation.
+     *
+     * @param key      The key whose value is to be incremented and set with expiration.
+     * @param value    The amount by which to increment the key's value.
+     * @param timeout  The duration after which the key should expire.
+     * @param unit     The time unit of the expiration timeout.
+     * @param callback An optional callback for handling exceptions, an instance of {@link Redis4jWrapCallback}.
+     * @return The incremented value of the key, or -1 if an error occurs.
+     */
+    public static long increaseKeyByEx(String key, long value, long timeout, TimeUnit unit, Redis4jWrapCallback callback) {
+        Redis4jService e = jProvider();
+        if (e == null) {
+            return -1;
+        }
+        return e.increaseKeyByEx(dispatch(), key, value, timeout, unit, callback);
+    }
+
+    /**
      * Increases the value of a numeric key in Redis by a specified increment and sets an expiration time for the key.
      * If the dispatch template, key, timeout, unit, or value is invalid (null, empty, negative), returns -1 indicating failure.
      * Uses the {@link #increaseKeyBy} method to increment the key's value by the specified amount and then sets an expiration using the provided timeout and unit.
@@ -1494,6 +1611,27 @@ public abstract class Redis4j {
             return -1;
         }
         return e.decreaseKeyByEx(dispatch(), key, value, timeout, unit);
+    }
+
+    /**
+     * Decreases the value of a numeric key in Redis by a specified decrement and sets an expiration time for the key, with an optional callback for handling exceptions.
+     * If the dispatch template, key, timeout, unit, or value is invalid (null, empty, negative), returns -1 indicating failure.
+     * Uses the {@link #decreaseKeyBy} method to decrement the key's value by the specified amount and then sets an expiration using the provided timeout and unit.
+     * Logs any exceptions that occur during the operation.
+     *
+     * @param key      The key whose value is to be decremented and set with expiration.
+     * @param value    The amount by which to decrement the key's value.
+     * @param timeout  The duration after which the key should expire.
+     * @param unit     The time unit of the expiration timeout.
+     * @param callback An optional callback for handling exceptions, an instance of {@link Redis4jWrapCallback}.
+     * @return The decremented value of the key, or -1 if an error occurs.
+     */
+    public static long decreaseKeyByEx(String key, long value, long timeout, TimeUnit unit, Redis4jWrapCallback callback) {
+        Redis4jService e = jProvider();
+        if (e == null) {
+            return -1;
+        }
+        return e.decreaseKeyByEx(dispatch(), key, value, timeout, unit, callback);
     }
 
     /**
@@ -1961,7 +2099,9 @@ public abstract class Redis4j {
             case "zset":
                 return new HttpWrapBuilder<>().ok(command.zrange(key, 0, -1)).customFields("redis_key_type_stored", "zset").build();
             default:
-                return new HttpWrapBuilder<>().message(String.format("unsupported type: %s", type)).statusCode(HttpStatusBuilder.UN_PROCESSABLE_ENTITY).customFields("redis_key_type_stored_unsupported", type).build();
+                return new HttpWrapBuilder<>().message(String.format("unsupported type: %s", type))
+                        .statusCode(HttpStatusBuilder.UN_PROCESSABLE_ENTITY)
+                        .customFields("redis_key_type_stored_unsupported", type).build();
         }
     }
 }

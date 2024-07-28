@@ -618,6 +618,36 @@ public class Redis4jServiceImpl implements Redis4jService {
     }
 
     /**
+     * Stores a map of objects in Redis using the given RedisTemplate and key, with an optional callback
+     * for handling exceptions. If the dispatch template is null, the map is empty, or the key is empty or blank,
+     * the method does nothing.
+     *
+     * @param dispatch The RedisTemplate used to store the map.
+     * @param key      The key under which the map will be stored.
+     * @param map      The map of objects to be stored in Redis.
+     * @param callback An optional callback for handling exceptions, an instance of {@link Redis4jWrapCallback}.
+     * @param <T>      The type of objects in the map.
+     */
+    @Override
+    public <T> void setCacheMap(RedisTemplate<String, Object> dispatch, String key, Map<String, T> map, Redis4jWrapCallback callback) {
+        HttpWrapBuilder<?> response = new HttpWrapBuilder<>().ok(null).requestId(Redis4j.getCurrentSessionId());
+        try {
+            this.setCacheMap(dispatch, key, map);
+        } catch (Exception e) {
+            response
+                    .statusCode(HttpStatusBuilder.INTERNAL_SERVER_ERROR)
+                    .message("setting redis key map failed")
+                    .debug("cause", e.getMessage())
+                    .errors(e)
+                    .customFields("redis_key", key)
+                    .customFields("redis_value", map);
+        }
+        if (callback != null) {
+            callback.onCallback(response.build());
+        }
+    }
+
+    /**
      * Stores a map of objects in Redis using the given RedisTemplate and key.
      * If the dispatch template is null, the map is empty, or the key is empty or blank,
      * the method does nothing.
@@ -633,6 +663,38 @@ public class Redis4jServiceImpl implements Redis4jService {
             return;
         }
         this.setCacheMap(dispatch, key, Collection4j.mapOf(map));
+    }
+
+    /**
+     * Stores a map of objects in Redis using the given RedisTemplate and key, with an optional callback
+     * for handling exceptions. This method allows for a variable number of key-value pairs to be provided as arguments.
+     * If the dispatch template is null, the map is empty, or the key is empty or blank,
+     * the method does nothing.
+     *
+     * @param dispatch The RedisTemplate used to store the map.
+     * @param key      The key under which the map will be stored.
+     * @param callback An optional callback for handling exceptions, an instance of {@link Redis4jWrapCallback}.
+     * @param map      A variable number of key-value pairs to be stored in Redis.
+     * @param <T>      The type of objects in the map.
+     */
+    @SafeVarargs
+    @Override
+    public final <T> void setCacheMapSafe(RedisTemplate<String, Object> dispatch, String key, Redis4jWrapCallback callback, Pair<String, T>... map) {
+        HttpWrapBuilder<?> response = new HttpWrapBuilder<>().ok(null).requestId(Redis4j.getCurrentSessionId());
+        try {
+            this.setCacheMapSafe(dispatch, key, map);
+        } catch (Exception e) {
+            response
+                    .statusCode(HttpStatusBuilder.INTERNAL_SERVER_ERROR)
+                    .message("setting redis key map safe failed")
+                    .debug("cause", e.getMessage())
+                    .errors(e)
+                    .customFields("redis_key", key)
+                    .customFields("redis_value", map);
+        }
+        if (callback != null) {
+            callback.onCallback(response.build());
+        }
     }
 
     /**
@@ -654,6 +716,36 @@ public class Redis4jServiceImpl implements Redis4jService {
         }
         key = String4j.trimWhitespace(key);
         return dispatch.opsForHash().entries(key);
+    }
+
+    /**
+     * Retrieves a map of objects from Redis using the given RedisTemplate and key, with an optional callback
+     * for handling exceptions. If the dispatch template is null or the key is empty or blank,
+     * the method returns an empty map.
+     *
+     * @param dispatch The RedisTemplate used to retrieve the map.
+     * @param key      The key under which the map is stored.
+     * @param callback An optional callback for handling exceptions, an instance of {@link Redis4jWrapCallback}.
+     * @return A map of objects retrieved from Redis, or an empty map if the dispatch template or key is invalid.
+     */
+    @Override
+    public Map<Object, Object> getCacheMap(RedisTemplate<String, Object> dispatch, String key, Redis4jWrapCallback callback) {
+        HttpWrapBuilder<?> response = new HttpWrapBuilder<>().ok(null).requestId(Redis4j.getCurrentSessionId());
+        Map<Object, Object> map = new HashMap<>();
+        try {
+            map = this.getCacheMap(dispatch, key);
+        } catch (Exception e) {
+            response
+                    .statusCode(HttpStatusBuilder.INTERNAL_SERVER_ERROR)
+                    .message("getting redis key map failed")
+                    .debug("cause", e.getMessage())
+                    .errors(e)
+                    .customFields("redis_key", key);
+        }
+        if (callback != null) {
+            callback.onCallback(response.build());
+        }
+        return map;
     }
 
     /**
@@ -686,6 +778,38 @@ public class Redis4jServiceImpl implements Redis4jService {
     }
 
     /**
+     * Sets a value in a Redis hash using the given RedisTemplate, key, and hash key, with an optional callback
+     * for handling exceptions. If the dispatch template is null, the value is null, or the key or hash key is empty or blank,
+     * the method returns without performing any operation.
+     *
+     * @param dispatch The RedisTemplate used to set the hash value.
+     * @param key      The key under which the hash is stored.
+     * @param hKey     The hash key under which the value is stored.
+     * @param value    The value to be set in the hash.
+     * @param callback An optional callback for handling exceptions, an instance of {@link Redis4jWrapCallback}.
+     * @param <T>      The type of the value being set.
+     */
+    @Override
+    public <T> void setCacheMapValue(RedisTemplate<String, Object> dispatch, String key, String hKey, T value, Redis4jWrapCallback callback) {
+        HttpWrapBuilder<?> response = new HttpWrapBuilder<>().ok(null).requestId(Redis4j.getCurrentSessionId());
+        try {
+            this.setCacheMapValue(dispatch, key, hKey, value);
+        } catch (Exception e) {
+            response
+                    .statusCode(HttpStatusBuilder.INTERNAL_SERVER_ERROR)
+                    .message("setting redis key map failed")
+                    .debug("cause", e.getMessage())
+                    .errors(e)
+                    .customFields("redis_key", key)
+                    .customFields("redis_value", value)
+                    .customFields("redis_hash_key", hKey);
+        }
+        if (callback != null) {
+            callback.onCallback(response.build());
+        }
+    }
+
+    /**
      * Retrieves a value from a Redis hash using the given RedisTemplate, key, and hash key.
      * If the dispatch template is null, or if the key or hash key is empty or blank,
      * the method returns null.
@@ -713,6 +837,39 @@ public class Redis4jServiceImpl implements Redis4jService {
     }
 
     /**
+     * Retrieves a value from a Redis hash using the given RedisTemplate, key, and hash key, with an optional callback
+     * for handling exceptions. If the dispatch template is null, or if the key or hash key is empty or blank,
+     * the method returns null.
+     *
+     * @param dispatch The RedisTemplate used to retrieve the hash value.
+     * @param key      The key under which the hash is stored.
+     * @param hKey     The hash key under which the value is stored.
+     * @param callback An optional callback for handling exceptions, an instance of {@link Redis4jWrapCallback}.
+     * @param <T>      The type of the value to be retrieved.
+     * @return The value from the hash corresponding to the provided hash key, or null if not found or if inputs are invalid.
+     */
+    @Override
+    public <T> T getCacheMapValue(RedisTemplate<String, Object> dispatch, String key, String hKey, Redis4jWrapCallback callback) {
+        HttpWrapBuilder<?> response = new HttpWrapBuilder<>().ok(null).requestId(Redis4j.getCurrentSessionId());
+        T data = null;
+        try {
+            data = this.getCacheMapValue(dispatch, key, hKey);
+        } catch (Exception e) {
+            response
+                    .statusCode(HttpStatusBuilder.INTERNAL_SERVER_ERROR)
+                    .message("getting redis key map failed")
+                    .debug("cause", e.getMessage())
+                    .errors(e)
+                    .customFields("redis_key", key)
+                    .customFields("redis_hash_key", hKey);
+        }
+        if (callback != null) {
+            callback.onCallback(response.build());
+        }
+        return data;
+    }
+
+    /**
      * Retrieves multiple values from a Redis hash using the given RedisTemplate, key, and collection of hash keys.
      * If the dispatch template is null, or if the key or collection of hash keys is empty or blank,
      * the method returns an empty list.
@@ -737,14 +894,76 @@ public class Redis4jServiceImpl implements Redis4jService {
     }
 
     /**
-     * Get list of basic objects of cache
+     * Retrieves multiple values from a Redis hash using the given RedisTemplate, key, and collection of hash keys, with an optional callback
+     * for handling exceptions. If the dispatch template is null, or if the key or collection of hash keys is empty or blank,
+     * the method returns an empty list.
      *
-     * @param dispatch the Redis template, class {@link RedisTemplate}
-     * @return object list
+     * @param dispatch The RedisTemplate used to retrieve the hash values.
+     * @param key      The key under which the hash is stored.
+     * @param hKeys    The collection of hash keys for which values need to be retrieved.
+     * @param callback An optional callback for handling exceptions, an instance of {@link Redis4jWrapCallback}.
+     * @param <T>      The type of the values to be retrieved.
+     * @return A list of values from the hash corresponding to the provided hash keys, or an empty list if inputs are invalid.
+     */
+    @Override
+    public <T> List<T> getMultiCacheMapValue(RedisTemplate<String, Object> dispatch, String key, Collection<Object> hKeys, Redis4jWrapCallback callback) {
+        HttpWrapBuilder<?> response = new HttpWrapBuilder<>().ok(null).requestId(Redis4j.getCurrentSessionId());
+        List<T> data = new ArrayList<>();
+        try {
+            data = this.getMultiCacheMapValue(dispatch, key, hKeys);
+        } catch (Exception e) {
+            response
+                    .statusCode(HttpStatusBuilder.INTERNAL_SERVER_ERROR)
+                    .message("getting redis multiple keys map failed")
+                    .debug("cause", e.getMessage())
+                    .errors(e)
+                    .customFields("redis_key", key)
+                    .customFields("redis_hash_keys", hKeys);
+        }
+        if (callback != null) {
+            callback.onCallback(response.build());
+        }
+        return data;
+    }
+
+    /**
+     * Retrieves a collection of all keys from the Redis cache using the given RedisTemplate.
+     * Uses a wildcard pattern to match all keys.
+     *
+     * @param dispatch The RedisTemplate used to interact with the Redis cache.
+     * @return A collection of all keys in the Redis cache, or an empty collection if the template is null.
      */
     @Override
     public Collection<String> defaultKeys(RedisTemplate<String, Object> dispatch) {
         return keys(dispatch, "*");
+    }
+
+    /**
+     * Retrieves a collection of all keys from the Redis cache using the given RedisTemplate,
+     * with an optional callback for handling exceptions. Uses a wildcard pattern to match all keys.
+     *
+     * @param dispatch The RedisTemplate used to interact with the Redis cache.
+     * @param callback An optional callback for handling exceptions, an instance of {@link Redis4jWrapCallback}.
+     * @return A collection of all keys in the Redis cache, or an empty collection if an exception occurs.
+     */
+    @Override
+    public Collection<String> defaultKeys(RedisTemplate<String, Object> dispatch, Redis4jWrapCallback callback) {
+        HttpWrapBuilder<?> response = new HttpWrapBuilder<>().ok(null).requestId(Redis4j.getCurrentSessionId());
+        Collection<String> list = new ArrayList<>();
+        try {
+            list = this.defaultKeys(dispatch);
+        } catch (Exception e) {
+            response
+                    .statusCode(HttpStatusBuilder.INTERNAL_SERVER_ERROR)
+                    .message("getting redis all keys failed")
+                    .debug("cause", e.getMessage())
+                    .errors(e)
+                    .customFields("redis_keys", "*");
+        }
+        if (callback != null) {
+            callback.onCallback(response.build());
+        }
+        return list;
     }
 
     /**
@@ -767,6 +986,37 @@ public class Redis4jServiceImpl implements Redis4jService {
         key = String4j.trimWhitespace(key);
         Collection<String> collection = this.defaultKeys(dispatch);
         return Collection4j.isNotEmpty(collection) && collection.contains(key);
+    }
+
+    /**
+     * Checks if a specific key exists in the Redis store using the given RedisTemplate,
+     * with an optional callback for handling exceptions.
+     * If the dispatch template is null, or if the key is empty or blank, the method returns false.
+     * Trims any whitespace from the key before checking its existence in the Redis store.
+     *
+     * @param dispatch The RedisTemplate used to check the existence of the key.
+     * @param key      The key to check for existence in the Redis store.
+     * @param callback An optional callback for handling exceptions, an instance of {@link Redis4jWrapCallback}.
+     * @return true if the key exists in the Redis store; false otherwise.
+     */
+    @Override
+    public boolean containsKey(RedisTemplate<String, Object> dispatch, String key, Redis4jWrapCallback callback) {
+        HttpWrapBuilder<?> response = new HttpWrapBuilder<>().ok(null).requestId(Redis4j.getCurrentSessionId());
+        boolean exists = false;
+        try {
+            exists = this.containsKey(dispatch, key);
+        } catch (Exception e) {
+            response
+                    .statusCode(HttpStatusBuilder.INTERNAL_SERVER_ERROR)
+                    .message("checking exists redis key failed")
+                    .debug("cause", e.getMessage())
+                    .errors(e)
+                    .customFields("redis_key", key);
+        }
+        if (callback != null) {
+            callback.onCallback(response.build());
+        }
+        return exists;
     }
 
     /**
@@ -793,6 +1043,36 @@ public class Redis4jServiceImpl implements Redis4jService {
             }
         } catch (Exception e) {
             logger.error("{} Redis4j, producing data to topic '{}' got an exception: {}", IconType.ERROR.getCode(), topic.getTopic(), e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Publishes data to a specified Redis topic using the given RedisTemplate,
+     * with an optional callback for handling exceptions.
+     * If the dispatch template, topic, or data is null, the method returns without performing any action.
+     * Attempts to send the data to the specified topic, and logs any exceptions that occur during the operation.
+     *
+     * @param dispatch The RedisTemplate used to send the data.
+     * @param topic    The Redis topic to which the data is to be sent.
+     * @param data     The data to be sent to the topic.
+     * @param callback An optional callback for handling exceptions, an instance of {@link Redis4jWrapCallback}.
+     * @param <T>      The type of data being sent.
+     */
+    @Override
+    public <T> void produce(RedisTemplate<String, Object> dispatch, ChannelTopic topic, T data, Redis4jWrapCallback callback) {
+        HttpWrapBuilder<?> response = new HttpWrapBuilder<>().ok(null).requestId(Redis4j.getCurrentSessionId());
+        try {
+            this.produce(dispatch, topic, data);
+        } catch (Exception e) {
+            response
+                    .statusCode(HttpStatusBuilder.INTERNAL_SERVER_ERROR)
+                    .message("producing redis topic failed")
+                    .debug("cause", e.getMessage())
+                    .errors(e)
+                    .customFields("redis_topic", topic.getTopic());
+        }
+        if (callback != null) {
+            callback.onCallback(response.build());
         }
     }
 
@@ -824,6 +1104,37 @@ public class Redis4jServiceImpl implements Redis4jService {
             logger.error("{} Redis4j, increasing key '{}' got an exception: {}", IconType.ERROR.getCode(), key, e.getMessage(), e);
             return -1;
         }
+    }
+
+    /**
+     * Increases the value of a numeric key in Redis, with an optional callback for handling exceptions.
+     * If the dispatch template or key is null or empty, returns -1 indicating failure.
+     * Uses Redis execute method to atomically increment the key value.
+     * Logs any exceptions that occur during the operation.
+     *
+     * @param dispatch The RedisTemplate used to execute the operation.
+     * @param key      The key whose value is to be incremented.
+     * @param callback An optional callback for handling exceptions, an instance of {@link Redis4jWrapCallback}.
+     * @return The incremented value of the key, or -1 if an error occurs.
+     */
+    @Override
+    public long increaseKey(RedisTemplate<String, Object> dispatch, String key, Redis4jWrapCallback callback) {
+        HttpWrapBuilder<?> response = new HttpWrapBuilder<>().ok(null).requestId(Redis4j.getCurrentSessionId());
+        long value = 0;
+        try {
+            value = this.increaseKey(dispatch, key);
+        } catch (Exception e) {
+            response
+                    .statusCode(HttpStatusBuilder.INTERNAL_SERVER_ERROR)
+                    .message("increasing redis key failed")
+                    .debug("cause", e.getMessage())
+                    .errors(e)
+                    .customFields("redis_key", key);
+        }
+        if (callback != null) {
+            callback.onCallback(response.build());
+        }
+        return value;
     }
 
     /**

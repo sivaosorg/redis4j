@@ -14,12 +14,24 @@ import java.util.concurrent.TimeUnit;
 public interface Redis4jService {
 
     /**
-     * Get list of basic objects of cache
+     * Retrieves a list of basic objects from the cache that match the specified pattern.
      *
-     * @param pattern string prefix
-     * @return object list
+     * @param dispatch the Redis template, an instance of {@link RedisTemplate}
+     * @param pattern  the string prefix used to match keys
+     * @return a collection of keys matching the specified pattern, or an empty list if the dispatch is null
      */
     Collection<String> keys(RedisTemplate<String, Object> dispatch, String pattern);
+
+    /**
+     * Retrieves a list of basic objects from the cache that match the specified pattern,
+     * with an optional callback for handling exceptions.
+     *
+     * @param dispatch the Redis template, an instance of {@link RedisTemplate}
+     * @param pattern  the string prefix used to match keys
+     * @param callback an optional callback for handling exceptions, an instance of {@link Redis4jWrapCallback}
+     * @return a collection of keys matching the specified pattern, or an empty list if an exception occurs
+     */
+    Collection<String> keys(RedisTemplate<String, Object> dispatch, String pattern, Redis4jWrapCallback callback);
 
     /**
      * Sets a cache object in Redis using the given RedisTemplate.
@@ -31,6 +43,19 @@ public interface Redis4jService {
      * @param <T>      The type of the value being cached.
      */
     <T> void setCacheObject(RedisTemplate<String, Object> dispatch, String key, T value);
+
+    /**
+     * Sets a cache object in Redis using the given RedisTemplate, with an optional callback
+     * for handling exceptions. If the dispatch template or value is null, or if the key is empty
+     * or blank, the method returns without performing any operation.
+     *
+     * @param dispatch The RedisTemplate used to set the cache object.
+     * @param key      The key under which the value should be stored.
+     * @param value    The value to be cached.
+     * @param callback An optional callback for handling exceptions, an instance of {@link Redis4jWrapCallback}.
+     * @param <T>      The type of the value being cached.
+     */
+    <T> void setCacheObject(RedisTemplate<String, Object> dispatch, String key, T value, Redis4jWrapCallback callback);
 
     /**
      * Sets a cache object in Redis with an expiration timeout using the given RedisTemplate.
@@ -47,6 +72,21 @@ public interface Redis4jService {
     <T> void setCacheObject(RedisTemplate<String, Object> dispatch, String key, T value, long timeout, TimeUnit unit);
 
     /**
+     * Sets a cache object in Redis with an expiration timeout using the given RedisTemplate, with an optional callback
+     * for handling exceptions. If the dispatch template, value, or time unit is null, or if the timeout is negative,
+     * or if the key is empty or blank, the method returns without performing any operation.
+     *
+     * @param dispatch The RedisTemplate used to set the cache object.
+     * @param key      The key under which the value should be stored.
+     * @param value    The value to be cached.
+     * @param timeout  The expiration timeout for the cached object.
+     * @param unit     The time unit for the expiration timeout.
+     * @param callback An optional callback for handling exceptions, an instance of {@link Redis4jWrapCallback}.
+     * @param <T>      The type of the value being cached.
+     */
+    <T> void setCacheObject(RedisTemplate<String, Object> dispatch, String key, T value, long timeout, TimeUnit unit, Redis4jWrapCallback callback);
+
+    /**
      * Sets an expiration timeout on a cache object in Redis using the given RedisTemplate.
      * If the dispatch template, time unit is null, or if the timeout is negative,
      * or if the key is empty or blank, the method returns false.
@@ -60,6 +100,20 @@ public interface Redis4jService {
     boolean expire(RedisTemplate<String, Object> dispatch, String key, long timeout, TimeUnit unit);
 
     /**
+     * Sets an expiration timeout on a cache object in Redis using the given RedisTemplate, with an optional callback
+     * for handling exceptions. If the dispatch template, time unit is null, or if the timeout is negative,
+     * or if the key is empty or blank, the method returns false.
+     *
+     * @param dispatch The RedisTemplate used to set the expiration timeout.
+     * @param key      The key of the cache object on which the timeout should be set.
+     * @param timeout  The expiration timeout for the cache object.
+     * @param unit     The time unit for the expiration timeout.
+     * @param callback An optional callback for handling exceptions, an instance of {@link Redis4jWrapCallback}.
+     * @return true if the expiration timeout was successfully set; false otherwise.
+     */
+    boolean expire(RedisTemplate<String, Object> dispatch, String key, long timeout, TimeUnit unit, Redis4jWrapCallback callback);
+
+    /**
      * Retrieves a cache object from Redis using the given RedisTemplate.
      * If the dispatch template is null, or if the key is empty or blank, the method returns null.
      *
@@ -71,6 +125,19 @@ public interface Redis4jService {
     <T> T getCacheObject(RedisTemplate<String, Object> dispatch, String key);
 
     /**
+     * Retrieves a cache object from Redis using the given RedisTemplate, with an optional callback
+     * for handling exceptions. If the dispatch template is null, or if the key is empty or blank,
+     * the method returns null.
+     *
+     * @param dispatch The RedisTemplate used to retrieve the cache object.
+     * @param key      The key of the cache object to retrieve.
+     * @param callback An optional callback for handling exceptions, an instance of {@link Redis4jWrapCallback}.
+     * @param <T>      The type of the value being retrieved.
+     * @return The cached object associated with the given key, or null if the dispatch template is null or the key is empty/blank.
+     */
+    <T> T getCacheObject(RedisTemplate<String, Object> dispatch, String key, Redis4jWrapCallback callback);
+
+    /**
      * Removes a cache object from Redis using the given RedisTemplate.
      * If the dispatch template is null, or if the key is empty or blank, the method returns false.
      *
@@ -79,6 +146,18 @@ public interface Redis4jService {
      * @return true if the cache object was successfully removed; false otherwise.
      */
     boolean removeObject(RedisTemplate<String, Object> dispatch, String key);
+
+    /**
+     * Removes a cache object from Redis using the given RedisTemplate, with an optional callback
+     * for handling exceptions. If the dispatch template is null, or if the key is empty or blank,
+     * the method returns false.
+     *
+     * @param dispatch The RedisTemplate used to remove the cache object.
+     * @param key      The key of the cache object to remove.
+     * @param callback An optional callback for handling exceptions, an instance of {@link Redis4jWrapCallback}.
+     * @return true if the cache object was successfully removed; false otherwise.
+     */
+    boolean removeObject(RedisTemplate<String, Object> dispatch, String key, Redis4jWrapCallback callback);
 
     /**
      * Stores a list of objects in Redis using the given RedisTemplate.
@@ -93,6 +172,20 @@ public interface Redis4jService {
     <T> long setCacheList(RedisTemplate<String, Object> dispatch, String key, List<T> list);
 
     /**
+     * Stores a list of objects in Redis using the given RedisTemplate, with an optional callback
+     * for handling exceptions. If the dispatch template is null, the list is empty, or the key is empty or blank,
+     * the method returns 0.
+     *
+     * @param dispatch The RedisTemplate used to store the list.
+     * @param key      The key under which the list is stored.
+     * @param list     The list of objects to store.
+     * @param callback An optional callback for handling exceptions, an instance of {@link Redis4jWrapCallback}.
+     * @param <T>      The type of objects in the list.
+     * @return The number of elements in the list that were successfully stored; 0 if the operation failed or the inputs were invalid.
+     */
+    <T> long setCacheList(RedisTemplate<String, Object> dispatch, String key, List<T> list, Redis4jWrapCallback callback);
+
+    /**
      * Retrieves a list of objects from Redis using the given RedisTemplate.
      * If the dispatch template is null, or if the key is empty or blank, the method returns an empty list.
      *
@@ -102,6 +195,19 @@ public interface Redis4jService {
      * @return The list of objects stored under the given key; an empty list if the operation failed or the inputs were invalid.
      */
     <T> List<T> getCacheList(RedisTemplate<String, Object> dispatch, String key);
+
+    /**
+     * Retrieves a list of objects from Redis using the given RedisTemplate, with an optional callback
+     * for handling exceptions. If the dispatch template is null, or if the key is empty or blank,
+     * the method returns an empty list.
+     *
+     * @param dispatch The RedisTemplate used to retrieve the list.
+     * @param key      The key under which the list is stored.
+     * @param callback An optional callback for handling exceptions, an instance of {@link Redis4jWrapCallback}.
+     * @param <T>      The type of objects in the list.
+     * @return The list of objects stored under the given key; an empty list if the operation failed or the inputs were invalid.
+     */
+    <T> List<T> getCacheList(RedisTemplate<String, Object> dispatch, String key, Redis4jWrapCallback callback);
 
     /**
      * Stores a set of objects in Redis using the given RedisTemplate and returns the BoundSetOperations for further operations.
@@ -116,6 +222,20 @@ public interface Redis4jService {
     <T> BoundSetOperations<String, T> setCacheSet(RedisTemplate<String, Object> dispatch, String key, Set<T> dataSet);
 
     /**
+     * Stores a set of objects in Redis using the given RedisTemplate, with an optional callback
+     * for handling exceptions. If the dispatch template is null, the dataSet is empty, or the key is empty or blank,
+     * the method returns null.
+     *
+     * @param dispatch The RedisTemplate used to store the set.
+     * @param key      The key under which the set is stored.
+     * @param dataSet  The set of data to be stored.
+     * @param callback An optional callback for handling exceptions, an instance of {@link Redis4jWrapCallback}.
+     * @param <T>      The type of objects in the set.
+     * @return The BoundSetOperations for the given key and set, or null if the operation failed or the inputs were invalid.
+     */
+    <T> BoundSetOperations<String, T> setCacheSet(RedisTemplate<String, Object> dispatch, String key, Set<T> dataSet, Redis4jWrapCallback callback);
+
+    /**
      * Retrieves a set of objects from Redis using the given RedisTemplate and key.
      * If the dispatch template is null or the key is empty or blank, the method returns an empty set.
      *
@@ -125,6 +245,18 @@ public interface Redis4jService {
      * @return The set of objects retrieved from Redis, or an empty set if the operation failed or the inputs were invalid.
      */
     <T> Set<T> getCacheSet(RedisTemplate<String, Object> dispatch, String key);
+
+    /**
+     * Retrieves a set of objects from Redis using the given RedisTemplate and key, with an optional callback
+     * for handling exceptions. If the dispatch template is null or the key is empty or blank, the method returns an empty set.
+     *
+     * @param dispatch The RedisTemplate used to retrieve the set.
+     * @param key      The key under which the set is stored.
+     * @param callback An optional callback for handling exceptions, an instance of {@link Redis4jWrapCallback}.
+     * @param <T>      The type of objects in the set.
+     * @return The set of objects retrieved from Redis, or an empty set if the operation failed or the inputs were invalid.
+     */
+    <T> Set<T> getCacheSet(RedisTemplate<String, Object> dispatch, String key, Redis4jWrapCallback callback);
 
     /**
      * Stores a map of objects in Redis using the given RedisTemplate and key.

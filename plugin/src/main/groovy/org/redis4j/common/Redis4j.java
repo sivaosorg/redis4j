@@ -9,20 +9,26 @@ import org.redis4j.config.Redis4jBeanConfig;
 import org.redis4j.config.Redis4jStatusConfig;
 import org.redis4j.service.Redis4jConfigService;
 import org.redis4j.service.Redis4jService;
+import org.redis4j.service.Redis4jWrapCallback;
 import org.redis4j.service.impl.Redis4jConfigServiceImpl;
 import org.redis4j.service.impl.Redis4jServiceImpl;
 import org.springframework.data.redis.core.BoundSetOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.unify4j.common.Collection4j;
 import org.unify4j.common.Object4j;
 import org.unify4j.common.String4j;
+import org.unify4j.common.UniqueId4j;
 import org.unify4j.model.builder.HttpStatusBuilder;
 import org.unify4j.model.builder.HttpWrapBuilder;
 import org.unify4j.model.c.Pair;
 import org.unify4j.model.response.WrapResponse;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -36,6 +42,52 @@ public abstract class Redis4j {
     protected static RedisClient client;
     protected static StatefulRedisConnection<String, String> connection;
     private static final Lock lock = new ReentrantLock();
+
+    /**
+     * @return the HTTP servlet request, class {@link HttpServletRequest}
+     */
+    public static HttpServletRequest getRequest() {
+        ServletRequestAttributes s = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+        return s.getRequest();
+    }
+
+    /**
+     * Retrieves the current session ID from the request context.
+     * <p>
+     * This method accesses the current request attributes from the RequestContextHolder
+     * and extracts the session ID associated with the current request. This is useful
+     * for tracking the session of the user making the request, especially in web
+     * applications where session management is crucial for user authentication and
+     * maintaining user state across multiple requests.
+     *
+     * @return the session ID of the current request, or null if no session is associated with the current request context
+     */
+    public static String getCurrentSessionId() {
+        try {
+            ServletRequestAttributes s = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+            return s.getSessionId();
+        } catch (IllegalStateException e) {
+            return String.valueOf(UniqueId4j.getUniqueId19());
+        }
+    }
+
+    /**
+     * Retrieves the session ID from the given HttpServletRequest.
+     * <p>
+     * This method gets the current HttpSession associated with the request,
+     * and then extracts the session ID from it. If there is no current session
+     * and create is false, it returns null.
+     *
+     * @param request the HttpServletRequest from which to retrieve the session ID
+     * @return the session ID, or null if there is no current session
+     */
+    public static String getSessionId(HttpServletRequest request) {
+        if (request == null) {
+            return String.valueOf(UniqueId4j.getUniqueId19());
+        }
+        HttpSession session = request.getSession(false); // Pass false to prevent creating a new session if one does not exist
+        return (session != null) ? session.getId() : null;
+    }
 
     /**
      * Provides an instance of Redis4jStatusConfig.
@@ -276,6 +328,20 @@ public abstract class Redis4j {
     }
 
     /**
+     * Get list of basic objects of cache
+     *
+     * @param pattern string prefix
+     * @return object list
+     */
+    public static Collection<String> keys(String pattern, Redis4jWrapCallback callback) {
+        Redis4jService e = jProvider();
+        if (e == null) {
+            return Collections.emptyList();
+        }
+        return e.keys(dispatch(), pattern, callback);
+    }
+
+    /**
      * Sets a cache object in Redis using the given RedisTemplate.
      * If the dispatch template or value is null, or if the key is empty or blank, the method returns without performing any operation.
      *
@@ -289,6 +355,24 @@ public abstract class Redis4j {
             return;
         }
         e.setCacheObject(dispatch(), key, value);
+    }
+
+    /**
+     * Sets a cache object in Redis using the given RedisTemplate, with an optional callback
+     * for handling exceptions. If the dispatch template or value is null, or if the key is empty
+     * or blank, the method returns without performing any operation.
+     *
+     * @param key      The key under which the value should be stored.
+     * @param value    The value to be cached.
+     * @param callback An optional callback for handling exceptions, an instance of {@link Redis4jWrapCallback}.
+     * @param <T>      The type of the value being cached.
+     */
+    public static <T> void setCacheObject(String key, T value, Redis4jWrapCallback callback) {
+        Redis4jService e = jProvider();
+        if (e == null) {
+            return;
+        }
+        e.setCacheObject(dispatch(), key, value, callback);
     }
 
     /**
@@ -323,6 +407,26 @@ public abstract class Redis4j {
             return;
         }
         e.setCacheObject(dispatch(), key, value, timeout, unit);
+    }
+
+    /**
+     * Sets a cache object in Redis with an expiration timeout using the given RedisTemplate, with an optional callback
+     * for handling exceptions. If the dispatch template, value, or time unit is null, or if the timeout is negative,
+     * or if the key is empty or blank, the method returns without performing any operation.
+     *
+     * @param key      The key under which the value should be stored.
+     * @param value    The value to be cached.
+     * @param timeout  The expiration timeout for the cached object.
+     * @param unit     The time unit for the expiration timeout.
+     * @param callback An optional callback for handling exceptions, an instance of {@link Redis4jWrapCallback}.
+     * @param <T>      The type of the value being cached.
+     */
+    public static <T> void setCacheObject(String key, T value, long timeout, TimeUnit unit, Redis4jWrapCallback callback) {
+        Redis4jService e = jProvider();
+        if (e == null) {
+            return;
+        }
+        e.setCacheObject(dispatch(), key, value, timeout, unit, callback);
     }
 
     /**
@@ -362,6 +466,25 @@ public abstract class Redis4j {
     }
 
     /**
+     * Sets an expiration timeout on a cache object in Redis using the given RedisTemplate, with an optional callback
+     * for handling exceptions. If the dispatch template, time unit is null, or if the timeout is negative,
+     * or if the key is empty or blank, the method returns false.
+     *
+     * @param key      The key of the cache object on which the timeout should be set.
+     * @param timeout  The expiration timeout for the cache object.
+     * @param unit     The time unit for the expiration timeout.
+     * @param callback An optional callback for handling exceptions, an instance of {@link Redis4jWrapCallback}.
+     * @return true if the expiration timeout was successfully set; false otherwise.
+     */
+    public static boolean expire(String key, long timeout, TimeUnit unit, Redis4jWrapCallback callback) {
+        Redis4jService e = jProvider();
+        if (e == null) {
+            return false;
+        }
+        return e.expire(dispatch(), key, timeout, unit, callback);
+    }
+
+    /**
      * Sets an expiration timeout on a cache object in Redis using the given RedisTemplate.
      * If the dispatch template, time unit is null, or if the timeout is negative,
      * or if the key is empty or blank, the method returns false.
@@ -395,6 +518,24 @@ public abstract class Redis4j {
     }
 
     /**
+     * Retrieves a cache object from Redis using the given RedisTemplate, with an optional callback
+     * for handling exceptions. If the dispatch template is null, or if the key is empty or blank,
+     * the method returns null.
+     *
+     * @param key      The key of the cache object to retrieve.
+     * @param callback An optional callback for handling exceptions, an instance of {@link Redis4jWrapCallback}.
+     * @param <T>      The type of the value being retrieved.
+     * @return The cached object associated with the given key, or null if the dispatch template is null or the key is empty/blank.
+     */
+    public static <T> T getCacheObject(String key, Redis4jWrapCallback callback) {
+        Redis4jService e = jProvider();
+        if (e == null) {
+            return null;
+        }
+        return e.getCacheObject(dispatch(), key, callback);
+    }
+
+    /**
      * Retrieves a cache object from Redis using the given RedisTemplate.
      * If the dispatch template is null, or if the key is empty or blank, the method returns null.
      *
@@ -422,6 +563,23 @@ public abstract class Redis4j {
             return false;
         }
         return e.removeObject(dispatch(), key);
+    }
+
+    /**
+     * Removes a cache object from Redis using the given RedisTemplate, with an optional callback
+     * for handling exceptions. If the dispatch template is null, or if the key is empty or blank,
+     * the method returns false.
+     *
+     * @param key      The key of the cache object to remove.
+     * @param callback An optional callback for handling exceptions, an instance of {@link Redis4jWrapCallback}.
+     * @return true if the cache object was successfully removed; false otherwise.
+     */
+    public static boolean removeObject(String key, Redis4jWrapCallback callback) {
+        Redis4jService e = jProvider();
+        if (e == null) {
+            return false;
+        }
+        return e.removeObject(dispatch(), key, callback);
     }
 
     /**
@@ -453,6 +611,25 @@ public abstract class Redis4j {
             return -1;
         }
         return e.setCacheList(dispatch(), key, list);
+    }
+
+    /**
+     * Stores a list of objects in Redis using the given RedisTemplate, with an optional callback
+     * for handling exceptions. If the dispatch template is null, the list is empty, or the key is empty or blank,
+     * the method returns 0.
+     *
+     * @param key      The key under which the list is stored.
+     * @param list     The list of objects to store.
+     * @param callback An optional callback for handling exceptions, an instance of {@link Redis4jWrapCallback}.
+     * @param <T>      The type of objects in the list.
+     * @return The number of elements in the list that were successfully stored; 0 if the operation failed or the inputs were invalid.
+     */
+    public static <T> long setCacheList(String key, List<T> list, Redis4jWrapCallback callback) {
+        Redis4jService e = jProvider();
+        if (e == null) {
+            return -1;
+        }
+        return e.setCacheList(dispatch(), key, list, callback);
     }
 
     /**
@@ -488,6 +665,24 @@ public abstract class Redis4j {
     }
 
     /**
+     * Retrieves a list of objects from Redis using the given RedisTemplate, with an optional callback
+     * for handling exceptions. If the dispatch template is null, or if the key is empty or blank,
+     * the method returns an empty list.
+     *
+     * @param key      The key under which the list is stored.
+     * @param callback An optional callback for handling exceptions, an instance of {@link Redis4jWrapCallback}.
+     * @param <T>      The type of objects in the list.
+     * @return The list of objects stored under the given key; an empty list if the operation failed or the inputs were invalid.
+     */
+    public static <T> List<T> getCacheList(String key, Redis4jWrapCallback callback) {
+        Redis4jService e = jProvider();
+        if (e == null) {
+            return Collections.emptyList();
+        }
+        return e.getCacheList(dispatch(), key, callback);
+    }
+
+    /**
      * Retrieves a list of objects from Redis using the given RedisTemplate.
      * If the dispatch template is null, or if the key is empty or blank, the method returns an empty list.
      *
@@ -520,6 +715,25 @@ public abstract class Redis4j {
     }
 
     /**
+     * Stores a set of objects in Redis using the given RedisTemplate, with an optional callback
+     * for handling exceptions. If the dispatch template is null, the dataSet is empty, or the key is empty or blank,
+     * the method returns null.
+     *
+     * @param key      The key under which the set is stored.
+     * @param dataSet  The set of data to be stored.
+     * @param callback An optional callback for handling exceptions, an instance of {@link Redis4jWrapCallback}.
+     * @param <T>      The type of objects in the set.
+     * @return The BoundSetOperations for the given key and set, or null if the operation failed or the inputs were invalid.
+     */
+    public static <T> BoundSetOperations<String, T> setCacheSet(String key, Set<T> dataSet, Redis4jWrapCallback callback) {
+        Redis4jService e = jProvider();
+        if (e == null) {
+            return null;
+        }
+        return e.setCacheSet(dispatch(), key, dataSet, callback);
+    }
+
+    /**
      * Stores a set of objects in Redis using the given RedisTemplate and returns the BoundSetOperations for further operations.
      * If the dispatch template is null, the dataSet is empty, or the key is empty or blank, the method returns null.
      *
@@ -549,6 +763,23 @@ public abstract class Redis4j {
             return Collections.emptySet();
         }
         return e.getCacheSet(dispatch(), key);
+    }
+
+    /**
+     * Retrieves a set of objects from Redis using the given RedisTemplate and key, with an optional callback
+     * for handling exceptions. If the dispatch template is null or the key is empty or blank, the method returns an empty set.
+     *
+     * @param key      The key under which the set is stored.
+     * @param callback An optional callback for handling exceptions, an instance of {@link Redis4jWrapCallback}.
+     * @param <T>      The type of objects in the set.
+     * @return The set of objects retrieved from Redis, or an empty set if the operation failed or the inputs were invalid.
+     */
+    public static <T> Set<T> getCacheSet(String key, Redis4jWrapCallback callback) {
+        Redis4jService e = jProvider();
+        if (e == null) {
+            return Collections.emptySet();
+        }
+        return e.getCacheSet(dispatch(), key, callback);
     }
 
     /**

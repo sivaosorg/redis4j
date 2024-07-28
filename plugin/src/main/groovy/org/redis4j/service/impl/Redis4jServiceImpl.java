@@ -1,8 +1,10 @@
 package org.redis4j.service.impl;
 
 import org.jetbrains.annotations.NotNull;
+import org.redis4j.common.Redis4j;
 import org.redis4j.service.Redis4jConfigService;
 import org.redis4j.service.Redis4jService;
+import org.redis4j.service.Redis4jWrapCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +13,8 @@ import org.springframework.data.redis.core.*;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.stereotype.Service;
 import org.unify4j.common.*;
+import org.unify4j.model.builder.HttpStatusBuilder;
+import org.unify4j.model.builder.HttpWrapBuilder;
 import org.unify4j.model.c.Pair;
 import org.unify4j.model.enums.IconType;
 
@@ -30,11 +34,11 @@ public class Redis4jServiceImpl implements Redis4jService {
     }
 
     /**
-     * Get list of basic objects of cache
+     * Retrieves a list of basic objects from the cache that match the specified pattern.
      *
-     * @param dispatch - the Redis template, class {@link RedisTemplate}
-     * @param pattern  string prefix
-     * @return object list
+     * @param dispatch the Redis template, an instance of {@link RedisTemplate}
+     * @param pattern  the string prefix used to match keys
+     * @return a collection of keys matching the specified pattern, or an empty list if the dispatch is null
      */
     @Override
     public Collection<String> keys(RedisTemplate<String, Object> dispatch, String pattern) {
@@ -42,6 +46,38 @@ public class Redis4jServiceImpl implements Redis4jService {
             return Collections.emptyList();
         }
         return dispatch.keys(pattern);
+    }
+
+    /**
+     * Retrieves a list of basic objects from the cache that match the specified pattern,
+     * with an optional callback for handling exceptions.
+     *
+     * @param dispatch the Redis template, an instance of {@link RedisTemplate}
+     * @param pattern  the string prefix used to match keys
+     * @param callback an optional callback for handling exceptions, an instance of {@link Redis4jWrapCallback}
+     * @return a collection of keys matching the specified pattern, or an empty list if an exception occurs
+     */
+    @Override
+    public Collection<String> keys(RedisTemplate<String, Object> dispatch, String pattern, Redis4jWrapCallback callback) {
+        HttpWrapBuilder<?> response = new HttpWrapBuilder<>().ok(null).requestId(Redis4j.getCurrentSessionId());
+        Collection<String> keys = new ArrayList<>();
+        try {
+            keys = this.keys(dispatch, pattern);
+        } catch (Exception e) {
+            if (redis4jConfigService.isDebugging()) {
+                logger.error("Redis4j, getting all keys got an exception: {} by pattern: {}", e.getMessage(), pattern, e);
+            }
+            response
+                    .statusCode(HttpStatusBuilder.INTERNAL_SERVER_ERROR)
+                    .message("getting all redis keys failed")
+                    .debug("cause", e.getMessage())
+                    .errors(e)
+                    .customFields("redis_key_pattern", pattern);
+        }
+        if (callback != null) {
+            callback.onCallback(response.build());
+        }
+        return keys;
     }
 
     /**
@@ -65,6 +101,36 @@ public class Redis4jServiceImpl implements Redis4jService {
         dispatch.opsForValue().set(key, value);
         if (redis4jConfigService.isDebugging()) {
             logger.info("{} Setting Redis key: '{}', value: {}", IconType.DEBUG.getCode(), key, Class4j.isPrimitive(value.getClass()) ? value.toString() : Json4j.toJson(value));
+        }
+    }
+
+    /**
+     * Sets a cache object in Redis using the given RedisTemplate, with an optional callback
+     * for handling exceptions. If the dispatch template or value is null, or if the key is empty
+     * or blank, the method returns without performing any operation.
+     *
+     * @param dispatch The RedisTemplate used to set the cache object.
+     * @param key      The key under which the value should be stored.
+     * @param value    The value to be cached.
+     * @param callback An optional callback for handling exceptions, an instance of {@link Redis4jWrapCallback}.
+     * @param <T>      The type of the value being cached.
+     */
+    @Override
+    public <T> void setCacheObject(RedisTemplate<String, Object> dispatch, String key, T value, Redis4jWrapCallback callback) {
+        HttpWrapBuilder<?> response = new HttpWrapBuilder<>().ok(null).requestId(Redis4j.getCurrentSessionId());
+        try {
+            this.setCacheObject(dispatch, key, value);
+        } catch (Exception e) {
+            response
+                    .statusCode(HttpStatusBuilder.INTERNAL_SERVER_ERROR)
+                    .message("setting redis key failed")
+                    .debug("cause", e.getMessage())
+                    .errors(e)
+                    .customFields("redis_key", key)
+                    .customFields("redis_value", value);
+        }
+        if (callback != null) {
+            callback.onCallback(response.build());
         }
     }
 
@@ -96,6 +162,39 @@ public class Redis4jServiceImpl implements Redis4jService {
     }
 
     /**
+     * Sets a cache object in Redis with an expiration timeout using the given RedisTemplate, with an optional callback
+     * for handling exceptions. If the dispatch template, value, or time unit is null, or if the timeout is negative,
+     * or if the key is empty or blank, the method returns without performing any operation.
+     *
+     * @param dispatch The RedisTemplate used to set the cache object.
+     * @param key      The key under which the value should be stored.
+     * @param value    The value to be cached.
+     * @param timeout  The expiration timeout for the cached object.
+     * @param unit     The time unit for the expiration timeout.
+     * @param callback An optional callback for handling exceptions, an instance of {@link Redis4jWrapCallback}.
+     * @param <T>      The type of the value being cached.
+     */
+    @Override
+    public <T> void setCacheObject(RedisTemplate<String, Object> dispatch, String key, T value, long timeout, TimeUnit unit, Redis4jWrapCallback callback) {
+        HttpWrapBuilder<?> response = new HttpWrapBuilder<>().ok(null).requestId(Redis4j.getCurrentSessionId());
+        try {
+            this.setCacheObject(dispatch, key, value, timeout, unit);
+        } catch (Exception e) {
+            response
+                    .statusCode(HttpStatusBuilder.INTERNAL_SERVER_ERROR)
+                    .message("setting redis key failed")
+                    .debug("cause", e.getMessage())
+                    .errors(e)
+                    .customFields("redis_key", key)
+                    .customFields("redis_value", value)
+                    .customFields("redis_timeout", timeout);
+        }
+        if (callback != null) {
+            callback.onCallback(response.build());
+        }
+    }
+
+    /**
      * Sets an expiration timeout on a cache object in Redis using the given RedisTemplate.
      * If the dispatch template, time unit is null, or if the timeout is negative,
      * or if the key is empty or blank, the method returns false.
@@ -119,6 +218,39 @@ public class Redis4jServiceImpl implements Redis4jService {
             logger.info("{} Setting expiration for Redis key: '{}' by timeout: {}({})", IconType.DEBUG.getCode(), key, timeout, unit.toString());
         }
         return Boolean.TRUE.equals(dispatch.expire(key, timeout, unit));
+    }
+
+    /**
+     * Sets an expiration timeout on a cache object in Redis using the given RedisTemplate, with an optional callback
+     * for handling exceptions. If the dispatch template, time unit is null, or if the timeout is negative,
+     * or if the key is empty or blank, the method returns false.
+     *
+     * @param dispatch The RedisTemplate used to set the expiration timeout.
+     * @param key      The key of the cache object on which the timeout should be set.
+     * @param timeout  The expiration timeout for the cache object.
+     * @param unit     The time unit for the expiration timeout.
+     * @param callback An optional callback for handling exceptions, an instance of {@link Redis4jWrapCallback}.
+     * @return true if the expiration timeout was successfully set; false otherwise.
+     */
+    @Override
+    public boolean expire(RedisTemplate<String, Object> dispatch, String key, long timeout, TimeUnit unit, Redis4jWrapCallback callback) {
+        HttpWrapBuilder<?> response = new HttpWrapBuilder<>().ok(null).requestId(Redis4j.getCurrentSessionId());
+        boolean isExpired = false;
+        try {
+            isExpired = this.expire(dispatch, key, timeout, unit);
+        } catch (Exception e) {
+            response
+                    .statusCode(HttpStatusBuilder.INTERNAL_SERVER_ERROR)
+                    .message("setting redis key expiration failed")
+                    .debug("cause", e.getMessage())
+                    .errors(e)
+                    .customFields("redis_key", key)
+                    .customFields("redis_timeout", timeout);
+        }
+        if (callback != null) {
+            callback.onCallback(response.build());
+        }
+        return isExpired;
     }
 
     /**
@@ -147,6 +279,37 @@ public class Redis4jServiceImpl implements Redis4jService {
     }
 
     /**
+     * Retrieves a cache object from Redis using the given RedisTemplate, with an optional callback
+     * for handling exceptions. If the dispatch template is null, or if the key is empty or blank,
+     * the method returns null.
+     *
+     * @param dispatch The RedisTemplate used to retrieve the cache object.
+     * @param key      The key of the cache object to retrieve.
+     * @param callback An optional callback for handling exceptions, an instance of {@link Redis4jWrapCallback}.
+     * @param <T>      The type of the value being retrieved.
+     * @return The cached object associated with the given key, or null if the dispatch template is null or the key is empty/blank.
+     */
+    @Override
+    public <T> T getCacheObject(RedisTemplate<String, Object> dispatch, String key, Redis4jWrapCallback callback) {
+        HttpWrapBuilder<?> response = new HttpWrapBuilder<>().ok(null).requestId(Redis4j.getCurrentSessionId());
+        T data = null;
+        try {
+            data = this.getCacheObject(dispatch, key);
+        } catch (Exception e) {
+            response
+                    .statusCode(HttpStatusBuilder.INTERNAL_SERVER_ERROR)
+                    .message("getting redis value failed")
+                    .debug("cause", e.getMessage())
+                    .errors(e)
+                    .customFields("redis_key", key);
+        }
+        if (callback != null) {
+            callback.onCallback(response.build());
+        }
+        return data;
+    }
+
+    /**
      * Removes a cache object from Redis using the given RedisTemplate.
      * If the dispatch template is null, or if the key is empty or blank, the method returns false.
      *
@@ -167,6 +330,36 @@ public class Redis4jServiceImpl implements Redis4jService {
             logger.info("{} Removing Redis key: '{}'", IconType.DEBUG.getCode(), key);
         }
         return Boolean.TRUE.equals(dispatch.delete(key));
+    }
+
+    /**
+     * Removes a cache object from Redis using the given RedisTemplate, with an optional callback
+     * for handling exceptions. If the dispatch template is null, or if the key is empty or blank,
+     * the method returns false.
+     *
+     * @param dispatch The RedisTemplate used to remove the cache object.
+     * @param key      The key of the cache object to remove.
+     * @param callback An optional callback for handling exceptions, an instance of {@link Redis4jWrapCallback}.
+     * @return true if the cache object was successfully removed; false otherwise.
+     */
+    @Override
+    public boolean removeObject(RedisTemplate<String, Object> dispatch, String key, Redis4jWrapCallback callback) {
+        HttpWrapBuilder<?> response = new HttpWrapBuilder<>().ok(null).requestId(Redis4j.getCurrentSessionId());
+        boolean isRemoved = false;
+        try {
+            isRemoved = this.removeObject(dispatch, key);
+        } catch (Exception e) {
+            response
+                    .statusCode(HttpStatusBuilder.INTERNAL_SERVER_ERROR)
+                    .message("removing redis key failed")
+                    .debug("cause", e.getMessage())
+                    .errors(e)
+                    .customFields("redis_key", key);
+        }
+        if (callback != null) {
+            callback.onCallback(response.build());
+        }
+        return isRemoved;
     }
 
     /**
@@ -196,6 +389,38 @@ public class Redis4jServiceImpl implements Redis4jService {
     }
 
     /**
+     * Stores a list of objects in Redis using the given RedisTemplate, with an optional callback
+     * for handling exceptions. If the dispatch template is null, the list is empty, or the key is empty or blank,
+     * the method returns 0.
+     *
+     * @param dispatch The RedisTemplate used to store the list.
+     * @param key      The key under which the list is stored.
+     * @param list     The list of objects to store.
+     * @param callback An optional callback for handling exceptions, an instance of {@link Redis4jWrapCallback}.
+     * @param <T>      The type of objects in the list.
+     * @return The number of elements in the list that were successfully stored; 0 if the operation failed or the inputs were invalid.
+     */
+    @Override
+    public <T> long setCacheList(RedisTemplate<String, Object> dispatch, String key, List<T> list, Redis4jWrapCallback callback) {
+        HttpWrapBuilder<?> response = new HttpWrapBuilder<>().ok(null).requestId(Redis4j.getCurrentSessionId());
+        long affected = 0;
+        try {
+            affected = this.setCacheList(dispatch, key, list);
+        } catch (Exception e) {
+            response
+                    .statusCode(HttpStatusBuilder.INTERNAL_SERVER_ERROR)
+                    .message("setting redis key list failed")
+                    .debug("cause", e.getMessage())
+                    .errors(e)
+                    .customFields("redis_key", key);
+        }
+        if (callback != null) {
+            callback.onCallback(response.build());
+        }
+        return affected;
+    }
+
+    /**
      * Retrieves a list of objects from Redis using the given RedisTemplate.
      * If the dispatch template is null, or if the key is empty or blank, the method returns an empty list.
      *
@@ -215,6 +440,37 @@ public class Redis4jServiceImpl implements Redis4jService {
         }
         key = String4j.trimWhitespace(key);
         return (List<T>) dispatch.opsForList().range(key, 0, -1);
+    }
+
+    /**
+     * Retrieves a list of objects from Redis using the given RedisTemplate, with an optional callback
+     * for handling exceptions. If the dispatch template is null, or if the key is empty or blank,
+     * the method returns an empty list.
+     *
+     * @param dispatch The RedisTemplate used to retrieve the list.
+     * @param key      The key under which the list is stored.
+     * @param callback An optional callback for handling exceptions, an instance of {@link Redis4jWrapCallback}.
+     * @param <T>      The type of objects in the list.
+     * @return The list of objects stored under the given key; an empty list if the operation failed or the inputs were invalid.
+     */
+    @Override
+    public <T> List<T> getCacheList(RedisTemplate<String, Object> dispatch, String key, Redis4jWrapCallback callback) {
+        HttpWrapBuilder<?> response = new HttpWrapBuilder<>().ok(null).requestId(Redis4j.getCurrentSessionId());
+        List<T> list = new ArrayList<>();
+        try {
+            list = this.getCacheList(dispatch, key);
+        } catch (Exception e) {
+            response
+                    .statusCode(HttpStatusBuilder.INTERNAL_SERVER_ERROR)
+                    .message("getting redis key list failed")
+                    .debug("cause", e.getMessage())
+                    .errors(e)
+                    .customFields("redis_key", key);
+        }
+        if (callback != null) {
+            callback.onCallback(response.build());
+        }
+        return list;
     }
 
     /**
@@ -252,6 +508,38 @@ public class Redis4jServiceImpl implements Redis4jService {
     }
 
     /**
+     * Stores a set of objects in Redis using the given RedisTemplate, with an optional callback
+     * for handling exceptions. If the dispatch template is null, the dataSet is empty, or the key is empty or blank,
+     * the method returns null.
+     *
+     * @param dispatch The RedisTemplate used to store the set.
+     * @param key      The key under which the set is stored.
+     * @param dataSet  The set of data to be stored.
+     * @param callback An optional callback for handling exceptions, an instance of {@link Redis4jWrapCallback}.
+     * @param <T>      The type of objects in the set.
+     * @return The BoundSetOperations for the given key and set, or null if the operation failed or the inputs were invalid.
+     */
+    @Override
+    public <T> BoundSetOperations<String, T> setCacheSet(RedisTemplate<String, Object> dispatch, String key, Set<T> dataSet, Redis4jWrapCallback callback) {
+        HttpWrapBuilder<?> response = new HttpWrapBuilder<>().ok(null).requestId(Redis4j.getCurrentSessionId());
+        BoundSetOperations<String, T> data = null;
+        try {
+            data = this.setCacheSet(dispatch, key, dataSet);
+        } catch (Exception e) {
+            response
+                    .statusCode(HttpStatusBuilder.INTERNAL_SERVER_ERROR)
+                    .message("setting redis key set failed")
+                    .debug("cause", e.getMessage())
+                    .errors(e)
+                    .customFields("redis_key", key);
+        }
+        if (callback != null) {
+            callback.onCallback(response.build());
+        }
+        return data;
+    }
+
+    /**
      * Retrieves a set of objects from Redis using the given RedisTemplate and key.
      * If the dispatch template is null or the key is empty or blank, the method returns an empty set.
      *
@@ -271,6 +559,36 @@ public class Redis4jServiceImpl implements Redis4jService {
         }
         key = String4j.trimWhitespace(key);
         return (Set<T>) dispatch.opsForSet().members(key);
+    }
+
+    /**
+     * Retrieves a set of objects from Redis using the given RedisTemplate and key, with an optional callback
+     * for handling exceptions. If the dispatch template is null or the key is empty or blank, the method returns an empty set.
+     *
+     * @param dispatch The RedisTemplate used to retrieve the set.
+     * @param key      The key under which the set is stored.
+     * @param callback An optional callback for handling exceptions, an instance of {@link Redis4jWrapCallback}.
+     * @param <T>      The type of objects in the set.
+     * @return The set of objects retrieved from Redis, or an empty set if the operation failed or the inputs were invalid.
+     */
+    @Override
+    public <T> Set<T> getCacheSet(RedisTemplate<String, Object> dispatch, String key, Redis4jWrapCallback callback) {
+        HttpWrapBuilder<?> response = new HttpWrapBuilder<>().ok(null).requestId(Redis4j.getCurrentSessionId());
+        Set<T> set = new HashSet<>();
+        try {
+            set = this.getCacheSet(dispatch, key);
+        } catch (Exception e) {
+            response
+                    .statusCode(HttpStatusBuilder.INTERNAL_SERVER_ERROR)
+                    .message("getting redis key set failed")
+                    .debug("cause", e.getMessage())
+                    .errors(e)
+                    .customFields("redis_key", key);
+        }
+        if (callback != null) {
+            callback.onCallback(response.build());
+        }
+        return set;
     }
 
     /**

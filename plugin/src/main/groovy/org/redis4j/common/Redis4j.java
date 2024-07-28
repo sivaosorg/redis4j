@@ -2080,28 +2080,30 @@ public abstract class Redis4j {
     @SuppressWarnings({"SpellCheckingInspection", "EnhancedSwitchMigration"})
     public static WrapResponse<?> wget(String key) {
         if (String4j.isEmpty(key)) {
-            return new HttpWrapBuilder<>().badRequest("key is required").build();
+            return new HttpWrapBuilder<>().badRequest("key is required").requestId(getCurrentSessionId()).build();
         }
         RedisCommands<String, String> command = syncCommands();
         if (command == null) {
-            return new HttpWrapBuilder<>().internalServerError("Redis connection failure").build();
+            return new HttpWrapBuilder<>().internalServerError("Redis connection failure").requestId(getCurrentSessionId()).build();
         }
         String type = command.type(key);
         switch (type) {
             case "string":
-                return new HttpWrapBuilder<>().ok(command.get(key)).customFields("redis_key_type_stored", "string").build();
+                return new HttpWrapBuilder<>().ok(command.get(key)).requestId(getCurrentSessionId()).customFields("redis_key_type_stored", "string").build();
             case "list":
-                return new HttpWrapBuilder<>().ok(command.lrange(key, 0, -1)).customFields("redis_key_type_stored", "list").build();
+                return new HttpWrapBuilder<>().ok(command.lrange(key, 0, -1)).requestId(getCurrentSessionId()).customFields("redis_key_type_stored", "list").build();
             case "hash":
-                return new HttpWrapBuilder<>().ok(command.hgetall(key)).customFields("redis_key_type_stored", "hash").build();
+                return new HttpWrapBuilder<>().ok(command.hgetall(key)).requestId(getCurrentSessionId()).customFields("redis_key_type_stored", "hash").build();
             case "set":
-                return new HttpWrapBuilder<>().ok(command.smembers(key)).customFields("redis_key_type_stored", "set").build();
+                return new HttpWrapBuilder<>().ok(command.smembers(key)).requestId(getCurrentSessionId()).customFields("redis_key_type_stored", "set").build();
             case "zset":
-                return new HttpWrapBuilder<>().ok(command.zrange(key, 0, -1)).customFields("redis_key_type_stored", "zset").build();
+                return new HttpWrapBuilder<>().ok(command.zrange(key, 0, -1)).requestId(getCurrentSessionId()).customFields("redis_key_type_stored", "zset").build();
             default:
                 return new HttpWrapBuilder<>().message(String.format("unsupported type: %s", type))
                         .statusCode(HttpStatusBuilder.UN_PROCESSABLE_ENTITY)
-                        .customFields("redis_key_type_stored_unsupported", type).build();
+                        .customFields("redis_key_type_stored_unsupported", type)
+                        .requestId(getCurrentSessionId())
+                        .build();
         }
     }
 }

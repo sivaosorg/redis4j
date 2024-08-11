@@ -29,7 +29,14 @@ apply plugin: 'java'
 apply plugin: 'eclipse'
 
 // Set the Java version compatibility for the project
-// sourceCompatibility = '1.8'
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(8) // Set this to 8, 11, or 17 based on your requirement
+    }
+    // Set target compatibility for Java 8
+    sourceCompatibility = '1.8'
+    targetCompatibility = '1.8'
+}
 
 repositories {
     // Use Maven Central for resolving dependencies.

@@ -179,6 +179,14 @@ dependencies {
     // The "spring-boot-configuration-processor" library, version 2.7.18,
     // is a Spring Boot module that processes configuration metadata annotations to generate metadata files and aid in auto-configuration of Spring applications.
     implementation group: 'org.springframework.boot', name: 'spring-boot-configuration-processor', version: '2.7.18'
+    // The "spring-boot-starter-test" module version 2.7.18 provides a comprehensive test framework for Spring Boot applications.
+    // It includes JUnit, Mockito, Spring TestContext Framework, and other useful tools for testing Spring applications.
+    // The starter integrates these components seamlessly, making it easier to write and execute tests in a Spring Boot environment.
+    testImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-test', version: '2.7.18'
+    // Mockito JUnit Jupiter version 3.12.4: This library integrates Mockito with JUnit 5,
+    // enabling developers to write unit tests using Mockito's powerful mocking features.
+    // It's designed to work specifically with the JUnit 5 platform, allowing for advanced testing capabilities.
+    testImplementation group: 'org.mockito', name: 'mockito-junit-jupiter', version: '3.12.4'
     // The "spring-data-redis" library, version 2.7.8, is a Spring Data module that provides easy configuration and access to Redis from Spring applications,
     // offering comprehensive support for Redis operations, including connection management, RedisTemplate, and repository support for Spring Data.
     implementation group: 'org.springframework.data', name: 'spring-data-redis', version: '2.7.8'

@@ -2077,7 +2077,7 @@ public abstract class Redis4j {
      * @return a wrapped HTTP response containing the retrieved data, or an error response if the key is empty,
      * Redis connection fails, or the key type is unsupported.
      */
-    @SuppressWarnings({"SpellCheckingInspection", "EnhancedSwitchMigration"})
+    @SuppressWarnings({"SpellCheckingInspection"})
     public static WrapResponse<?> wget(String key) {
         if (String4j.isEmpty(key)) {
             return new HttpWrapBuilder<>().badRequest("key is required").requestId(getCurrentSessionId()).build();
